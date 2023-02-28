@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "../lib/tools.h"
 
 #define TD_POOL_SIZE  4
 #define QUEUE_SIZE 8
@@ -16,7 +17,7 @@ int main (int argc, char **argv){
     int q_size = QUEUE_SIZE;
     int t_delay = TIME_DELAY;
 
-    char *dir_name;
+    char *dir_name = NULL;
     char *filename;
 
     while((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
@@ -54,10 +55,15 @@ int main (int argc, char **argv){
 
     }
 
-
     for (int i = optind; i < argc; i++) {
         filename = argv[i];
         printf("filename: %s\n", filename);
+    }
+
+    if (dir_name != NULL){
+        if( isDir(dir_name)){
+            explorer(dir_name);
+        }
     }
 
 
