@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include "../lib/tools.h"
 
+/* #include "../lib/queue.h"
+ * including this will result in circular dependency and will give a lot of errors
+ */
+
 #define TD_POOL_SIZE  4
 #define QUEUE_SIZE 8
 #define TIME_DELAY 0
@@ -18,7 +22,7 @@ int main (int argc, char **argv){
     int t_delay = TIME_DELAY;
 
     char *dir_name = NULL;
-    char *filename;
+    //char *filename;
 
     while((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
 
@@ -55,16 +59,25 @@ int main (int argc, char **argv){
 
     }
 
+    /* Queue init */
+    _queue *queue = malloc(sizeof(_queue));
+    queue->items = malloc(q_size * sizeof(char*));
+    queue->size = q_size;
+    printf("queue size: %d\n", queue->size);
+    queue->front = 0;
+    queue->rear = 0;
+
     for (int i = optind; i < argc; i++) {
-        filename = argv[i];
-        printf("filename: %s\n", filename);
+        enqueue(queue, argv[i]);
     }
 
     if (dir_name != NULL){
         if( isDir(dir_name)){
-            explorer(dir_name);
+            explorer(dir_name, queue);
         }
     }
+
+    print_queue(queue);
 
 
     return 0;
