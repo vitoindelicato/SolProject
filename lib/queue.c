@@ -22,7 +22,7 @@ void dequeue(_queue *queue){
 void enqueue(_queue *queue, char *filename){
 
     if (isFull(queue)) {
-        /*If the queue is full, then i proceed to free the filename that was in the first position
+        /*If the queue is full, then I proceed to free the filename that was in the first position
          * I make the rear pointing the next cell
          * and I put the new filename in the cell that is now pointed by front index*/
         dequeue(queue);
