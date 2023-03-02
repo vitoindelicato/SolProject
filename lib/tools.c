@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <string.h>
+#include "queue.h"
 
 
 int isDir(char *path){
@@ -20,7 +21,7 @@ int isDir(char *path){
 
 
 
-void explorer(char *dir_name){
+void explorer(char *dir_name, _queue *queue){
     DIR *dir;
 
     if(  (dir = opendir(dir_name)) == NULL  ){
@@ -44,23 +45,20 @@ void explorer(char *dir_name){
             strncat(updated_path, file->d_name, strlen(file->d_name) + 1);
 
             if ( isDir(updated_path) ) {
-                explorer(updated_path);
+                explorer(updated_path, queue);
             }
             else {
-                printf("file: %s\n", updated_path);
-                //closedir(dir);
-                //return updated_path;
+                //printf("enqueuing file: %s\n", updated_path);
+                enqueue(queue, updated_path);
             }
 
         }
 
         if (errno != 0) {
             perror("readdir");
-            //return NULL;
         }
         else {
             closedir(dir);
-            //return NULL;
         }
     }
 }
