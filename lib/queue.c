@@ -2,10 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "../lib/queue.h"
+#include "queue.h"
+#include "enhanced_sc.h"
 
+extern pthread_cond_t empty;
+extern pthread_cond_t full;
+extern pthread_mutex_t q_mtx;
 
 void dequeue(_queue *queue){
+    lock(&q_mtx);
 
     if (isEmpty(queue)) {
         perror("Can't dequeue, queue is empty!");
@@ -16,11 +21,13 @@ void dequeue(_queue *queue){
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
 
+    unlock(&q_mtx);
+
 }
 
 
 void enqueue(_queue *queue, char *filename){
-
+    lock(&q_mtx);
     if (isFull(queue)) {
         /*If the queue is full, then I proceed to free the filename that was in the first position
          * I make the rear pointing the next cell
@@ -36,6 +43,7 @@ void enqueue(_queue *queue, char *filename){
         queue->front = (queue->front + 1) % queue->size;
 
     }
+    unlock(&q_mtx);
 }
 
 int isFull(_queue *queue){
