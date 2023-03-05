@@ -1,9 +1,11 @@
-#include "enhanced_sc.h"
+//#include "enhanced_sc.h"
 #include <stdlib.h>
-
+#include <stdio.h>
+#include <pthread.h>
+#include <errno.h>
 
 /* THREAD FUNCTIONS SECTION */
-int lock(pthread_mutex_t *mutex){
+void lock(pthread_mutex_t *mutex){
     int err;
     if((err = pthread_mutex_lock(mutex)) != 0){
         perror("Error while locking mutex");
@@ -11,7 +13,7 @@ int lock(pthread_mutex_t *mutex){
     }
 }
 
-int unlock(pthread_mutex_t *mutex){
+void unlock(pthread_mutex_t *mutex){
     int err;
     if((err = pthread_mutex_unlock(mutex)) != 0){
         perror("Error while unlocking mutex");
@@ -20,7 +22,7 @@ int unlock(pthread_mutex_t *mutex){
 }
 
 
-int cancel(pthread_t *tid){
+void cancel(pthread_t *tid){
     int err;
     if((err = pthread_cancel(*tid)) != 0){
         perror("Error while canceling thread");
@@ -28,14 +30,14 @@ int cancel(pthread_t *tid){
     }
 }
 
-
+/*
 static void cleanup(void* arg, pthread_mutex_t *mtx) {
     free(arg);
     unlock(mtx);
 }
+*/
 
-
-int create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args){
+void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args){
     int err;
     if((err = pthread_create(tid, attr, function, args)) != 0){
         perror("Error while creating thread");
@@ -43,7 +45,7 @@ int create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *
     }
 }
 
-int join(pthread_t thread_id, void **retval){
+void join(pthread_t thread_id, void **retval){
     int err;
     if((err = pthread_join(thread_id, retval)) != 0){
         perror("Error while joining thread");
@@ -52,7 +54,7 @@ int join(pthread_t thread_id, void **retval){
 }
 
 
-int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
+void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
     int err;
     if((err = pthread_cond_wait(cond, mutex)) != 0){
         perror("Error while waiting for condition");
@@ -62,7 +64,7 @@ int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
 
 
 
-int cond_signal(pthread_cond_t *cond){
+void cond_signal(pthread_cond_t *cond){
     int err;
     if((err = pthread_cond_signal(cond)) != 0){
         perror("Error while signaling condition");
@@ -71,7 +73,7 @@ int cond_signal(pthread_cond_t *cond){
 }
 
 
-int cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
+void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
     int err;
     if((err = pthread_cond_init(cnd, attr)) != 0){
         perror("Error while initializing condition");
@@ -79,3 +81,12 @@ int cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
     }
 }
 
+
+void *Malloc(size_t size){
+    void *ptr;
+    if((ptr = malloc(size)) == NULL){
+        perror("Error while allocating memory");
+        exit(EXIT_FAILURE);
+    }
+    return ptr;
+}

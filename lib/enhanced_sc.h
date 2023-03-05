@@ -2,17 +2,17 @@
 
 
 /* THREADS SYSTEM CALLS */
-int lock(pthread_mutex_t *mutex);
-int unlock(pthread_mutex_t *mutex);
-int cancel(pthread_t *tid);
-static void cleanup(void* arg);
+void lock(pthread_mutex_t *mutex);
+void unlock(pthread_mutex_t *mutex);
+void cancel(pthread_t *tid);
+//static void cleanup(void* arg);
 
-int create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args);
-int join(pthread_t thread_id, void **retval);
+void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args);
+void join(pthread_t thread_id, void **retval);
 
-int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
-int cond_signal(pthread_cond_t *cond);
-int cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr);
+void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
+void cond_signal(pthread_cond_t *cond);
+void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr);
 
 /* MEMORY ALLOCATION SYSTEM CALLS */
 void *Malloc(size_t size);
@@ -20,8 +20,8 @@ void *Malloc(size_t size);
 
 
 /*   READ AND WRITES   */
-ssize_t readn(int fd, void *ptr, size_t n);
-ssize_t writen(int fd, void *ptr, size_t n);
+size_t readn(int fd, void *ptr, size_t n);
+size_t writen(int fd, void *ptr, size_t n);
 
 
 

@@ -13,8 +13,8 @@ extern pthread_mutex_t q_mtx;
 void *worker_function(void *args){
     _queue *queue = (_queue *) args;
 
-    char filename[255];
-    cleanup(args, &q_mtx);
+    char *filename;
+    //cleanup(args, &q_mtx);
     /* Here I will write the thread function
      * Each thread will wait untill the concurrent queue is not empty
      * Then it will take one filename, will open the file, and will make its calculations based on the data contained by the file
@@ -28,10 +28,7 @@ void *worker_function(void *args){
 
     filename = dequeue(queue);
     unlock(&q_mtx);
+    printf("Thread %lu is working on file %s\n", pthread_self(), filename);
 
-
-
-
-
-    return;
+    return NULL;
 }

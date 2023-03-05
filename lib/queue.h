@@ -1,4 +1,4 @@
-
+#include "enhanced_sc.h"
 typedef struct{
     char **items;
     int front;
@@ -6,7 +6,8 @@ typedef struct{
     int size;
 } _queue;
 
-void dequeue(_queue *queue);
+
+char *dequeue(_queue *queue);
 void enqueue(_queue *queue, char *filename);
 int isFull(_queue *queue);
 int isEmpty(_queue *queue);

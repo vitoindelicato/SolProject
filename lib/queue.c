@@ -1,7 +1,5 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include "queue.h"
 #include "enhanced_sc.h"
 
@@ -21,7 +19,7 @@ char *dequeue(_queue *queue){
     printf("dequeueing: %s\n", queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
-    cond_signal(&not_full, &q_mtx);
+    cond_signal(&not_full);
     return filename;
 
 
@@ -42,7 +40,7 @@ void enqueue(_queue *queue, char *filename){
     queue->items[queue->front] = filename;
     queue->front = (queue->front + 1) % queue->size;
 
-    cond_signal(&not_empty, &q_mtx);
+    cond_signal(&not_empty);
     unlock(&q_mtx);
 }
 

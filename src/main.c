@@ -4,18 +4,15 @@
 #include <unistd.h>
 #include "../lib/tools.h"
 #include "../lib/enhanced_sc.h"
-
-/* #include "../lib/queue.h"
- * including this will result in circular dependency and will give a lot of errors
- */
+#include "worker_function.h"
 
 #define TD_POOL_SIZE  4
 #define QUEUE_SIZE 8
 #define TIME_DELAY 0
 
 
-pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
-pthread_cond_t full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 int main (int argc, char **argv){
@@ -65,8 +62,8 @@ int main (int argc, char **argv){
     }
 
     /* Queue init */
-    _queue *queue = malloc(sizeof(_queue));
-    queue->items = malloc(q_size * sizeof(char*));
+    _queue *queue = Malloc(sizeof(_queue));
+    queue->items = Malloc(q_size * sizeof(char*));
     queue->size = q_size;
     printf("queue size: %d\n", queue->size);
     queue->front = 0;
@@ -74,7 +71,7 @@ int main (int argc, char **argv){
 
 
     /* Threadpool init */
-    pthread_t[n_threads] threadpool;
+    pthread_t threadpool[n_threads];
 
     for (int i = 0; i < n_threads; i++) {
         create(&threadpool[i], NULL, worker_function, (void *)queue);
@@ -88,10 +85,15 @@ int main (int argc, char **argv){
     if (dir_name != NULL){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
+            /* enqueue() is called recursively from explorer()*/
         }
     }
 
-    //print_queue(queue);
+    /*
+    for (int i = 0; i < n_threads; i++) {
+        join(threadpool[i], NULL);
+    }
+    */
 
 
     return 0;
