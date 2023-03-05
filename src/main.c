@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "../lib/tools.h"
+#include "../lib/enhanced_sc.h"
 
 /* #include "../lib/queue.h"
  * including this will result in circular dependency and will give a lot of errors
@@ -12,6 +13,10 @@
 #define QUEUE_SIZE 8
 #define TIME_DELAY 0
 
+
+pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t full = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 int main (int argc, char **argv){
 
@@ -67,8 +72,17 @@ int main (int argc, char **argv){
     queue->front = 0;
     queue->rear = 0;
 
+
+    /* Threadpool init */
+    pthread_t[n_threads] threadpool;
+
+    for (int i = 0; i < n_threads; i++) {
+        create(&threadpool[i], NULL, worker_function, (void *)queue);
+    }
+
     for (int i = optind; i < argc; i++) {
-        enqueue(queue, argv[i]);
+        enqueue(queue, argv[i]); /* I was thinking to delegate producer tasks to queue library */
+        /* I mean, if I can send signals from another file it would be goodly wrapped up in queue functions.*/
     }
 
     if (dir_name != NULL){
@@ -77,7 +91,7 @@ int main (int argc, char **argv){
         }
     }
 
-    print_queue(queue);
+    //print_queue(queue);
 
 
     return 0;

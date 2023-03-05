@@ -29,6 +29,12 @@ int cancel(pthread_t *tid){
 }
 
 
+static void cleanup(void* arg, pthread_mutex_t *mtx) {
+    free(arg);
+    unlock(mtx);
+}
+
+
 int create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args){
     int err;
     if((err = pthread_create(tid, attr, function, args)) != 0){

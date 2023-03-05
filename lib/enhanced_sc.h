@@ -5,6 +5,7 @@
 int lock(pthread_mutex_t *mutex);
 int unlock(pthread_mutex_t *mutex);
 int cancel(pthread_t *tid);
+static void cleanup(void* arg);
 
 int create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args);
 int join(pthread_t thread_id, void **retval);

@@ -5,52 +5,55 @@
 #include "queue.h"
 #include "enhanced_sc.h"
 
-extern pthread_cond_t empty;
-extern pthread_cond_t full;
+extern pthread_cond_t not_empty;
+extern pthread_cond_t not_full;
 extern pthread_mutex_t q_mtx;
 
-void dequeue(_queue *queue){
-    lock(&q_mtx);
+char *dequeue(_queue *queue){
 
-    if (isEmpty(queue)) {
-        perror("Can't dequeue, queue is empty!");
-        exit(EXIT_FAILURE);
-    }
+    /* This function will be called only from threads
+     * At the moment of the call the thread has already acquired the lock
+     * So it is not necessary to do it again even here
+     * Same thing even for unlock*/
 
+    char *filename = Malloc(sizeof(char) * 255);
+    filename = queue->items[queue->rear];
     printf("dequeueing: %s\n", queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
+    cond_signal(&not_full, &q_mtx);
+    return filename;
 
-    unlock(&q_mtx);
 
 }
 
 
 void enqueue(_queue *queue, char *filename){
-    lock(&q_mtx);
-    if (isFull(queue)) {
-        /*If the queue is full, then I proceed to free the filename that was in the first position
-         * I make the rear pointing the next cell
-         * and I put the new filename in the cell that is now pointed by front index*/
-        dequeue(queue);
-        printf("enqueuing file: %s\n", filename);
-        queue->items[queue->front] = filename;
-        queue->front = (queue->front + 1) % queue->size;
-    }
-    else{
-        printf("enqueuing file: %s\n", filename);
-        queue->items[queue->front] = filename;
-        queue->front = (queue->front + 1) % queue->size;
 
+    lock(&q_mtx);
+
+    while(isFull(queue)) {
+        cond_wait(&not_full, &q_mtx);
     }
+
+    /* dequeue() will be called only by threads */
+
+    printf("enqueuing file: %s\n", filename);
+    queue->items[queue->front] = filename;
+    queue->front = (queue->front + 1) % queue->size;
+
+    cond_signal(&not_empty, &q_mtx);
     unlock(&q_mtx);
 }
+
+
 
 int isFull(_queue *queue){
     /* I have a full circular tail if and only if
      * rear and front are pointing the same position
      * and that position is already hosting a file name
      * */
+
     if( (queue->front) % queue->size == queue->rear && queue->items[queue->rear] != NULL){
         return 1;
     }
