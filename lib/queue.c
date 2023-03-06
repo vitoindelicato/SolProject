@@ -28,10 +28,10 @@ char *dequeue(_queue *queue){
 
 void enqueue(_queue *queue, char *filename){
 
-    lock(&q_mtx);
+    lock(&queue->queue_lock);
 
     while(isFull(queue)) {
-        cond_wait(&not_full, &q_mtx);
+        cond_wait(&not_full, &queue->queue_lock);
     }
 
     /* dequeue() will be called only by threads */
@@ -41,7 +41,7 @@ void enqueue(_queue *queue, char *filename){
     queue->front = (queue->front + 1) % queue->size;
 
     cond_signal(&not_empty);
-    unlock(&q_mtx);
+    unlock(&queue->queue_lock);
 }
 
 

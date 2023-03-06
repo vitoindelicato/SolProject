@@ -4,6 +4,7 @@ typedef struct{
     int front;
     int rear;
     int size;
+    pthread_mutex_t queue_lock;
 } _queue;
 
 

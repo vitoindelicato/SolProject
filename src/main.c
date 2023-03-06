@@ -13,7 +13,9 @@
 
 pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
+// pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+int done = 0;
 
 int main (int argc, char **argv){
 
@@ -65,6 +67,7 @@ int main (int argc, char **argv){
     _queue *queue = Malloc(sizeof(_queue));
     queue->items = Malloc(q_size * sizeof(char*));
     queue->size = q_size;
+    mtx_init(&queue->queue_lock, NULL);
     printf("queue size: %d\n", queue->size);
     queue->front = 0;
     queue->rear = 0;
@@ -73,9 +76,11 @@ int main (int argc, char **argv){
     /* Threadpool init */
     pthread_t threadpool[n_threads];
 
+
     for (int i = 0; i < n_threads; i++) {
         create(&threadpool[i], NULL, worker_function, (void *)queue);
     }
+
 
     for (int i = optind; i < argc; i++) {
         enqueue(queue, argv[i]); /* I was thinking to delegate producer tasks to queue library */
@@ -86,14 +91,18 @@ int main (int argc, char **argv){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
             /* enqueue() is called recursively from explorer()*/
+            done = 1; /* This will stop the threadpool */
         }
     }
+    done = 1;
 
-    /*
+
     for (int i = 0; i < n_threads; i++) {
         join(threadpool[i], NULL);
     }
-    */
+
+
+
 
 
     return 0;

@@ -13,6 +13,8 @@ void join(pthread_t thread_id, void **retval);
 void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
 void cond_signal(pthread_cond_t *cond);
 void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr);
+void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr);
+
 
 /* MEMORY ALLOCATION SYSTEM CALLS */
 void *Malloc(size_t size);

@@ -81,6 +81,14 @@ void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
     }
 }
 
+void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr){
+    int err;
+    if((err = pthread_mutex_init(mtx, attr)) != 0){
+        perror("Error while initializing mutex");
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 void *Malloc(size_t size){
     void *ptr;
