@@ -96,14 +96,10 @@ int main (int argc, char **argv){
     }
     done = 1;
 
-
+    /*
     for (int i = 0; i < n_threads; i++) {
         join(threadpool[i], NULL);
     }
-
-
-
-
-
+    */
     return 0;
 }

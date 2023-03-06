@@ -14,7 +14,7 @@ char *dequeue(_queue *queue){
      * So it is not necessary to do it again even here
      * Same thing even for unlock*/
 
-    char *filename = Malloc(sizeof(char) * 255);
+    char *filename = (char *) Malloc(sizeof(char) * 255);
     filename = queue->items[queue->rear];
     printf("dequeueing: %s\n", queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
@@ -52,7 +52,7 @@ int isFull(_queue *queue){
      * and that position is already hosting a file name
      * */
 
-    if( (queue->front) % queue->size == queue->rear && queue->items[queue->rear] != NULL){
+    if( (queue->front)+1 % queue->size == queue->rear && queue->items[queue->rear] != NULL){
         return 1;
     }
     else{
@@ -65,7 +65,7 @@ int isEmpty(_queue *queue){
      * rear and front are pointing the same position
      * and that position is empty*/
 
-    if( queue->front == queue->rear && queue->items[queue->front] == NULL){
+    if( (queue->front) % queue->size == queue->rear && queue->items[queue->front] == NULL){
         return 1;
     }
     return 0;
