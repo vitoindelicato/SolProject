@@ -3,15 +3,19 @@
 #include <string.h>
 #include <unistd.h>
 #include "../lib/tools.h"
-
-/* #include "../lib/queue.h"
- * including this will result in circular dependency and will give a lot of errors
- */
+#include "../lib/enhanced_sc.h"
+#include "worker_function.h"
 
 #define TD_POOL_SIZE  4
 #define QUEUE_SIZE 8
 #define TIME_DELAY 0
 
+
+pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
+pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
+// pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+int done = 0;
 
 int main (int argc, char **argv){
 
@@ -60,25 +64,58 @@ int main (int argc, char **argv){
     }
 
     /* Queue init */
-    _queue *queue = malloc(sizeof(_queue));
-    queue->items = malloc(q_size * sizeof(char*));
+    _queue *queue = Malloc(sizeof(_queue));
+    queue->items = Malloc(q_size * sizeof(char*));
+
+    for (int i = 0; i < q_size; i++) {
+        queue->items[i] = NULL;
+    }
+
+    mtx_init(&queue->queue_lock, NULL);
+    queue->done = 0;
     queue->size = q_size;
     printf("queue size: %d\n", queue->size);
     queue->front = 0;
     queue->rear = 0;
 
+
+
+    /* Threadpool init */
+    pthread_t threadpool[n_threads];
+
+
+    for (int i = 0; i < n_threads; i++) {
+        create(&threadpool[i], NULL, worker_function, (void *)queue);
+    }
+
+
     for (int i = optind; i < argc; i++) {
-        enqueue(queue, argv[i]);
+        enqueue(queue, argv[i]); /* I was thinking to delegate producer tasks to queue library */
+        /* I mean, if I can send signals from another file it would be goodly wrapped up in queue functions.*/
     }
 
     if (dir_name != NULL){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
+            /* enqueue() is called recursively from explorer()*/
         }
     }
 
-    print_queue(queue);
+    lock(&queue->queue_lock);
+    queue->done = 1;
+    printf("done setted and not_empty sent\n");
 
+    /* At this point i will not insert any file into the queue
+     * I need to send a not_empty signal in order to free all threads that where waiting
+     * in (isEmpty && done == 0*/
+
+    cond_broadcast(&not_empty);
+    unlock(&queue->queue_lock);
+
+    for (int i = 0; i < n_threads; i++) {
+        printf("joining\n");
+        join(threadpool[i], NULL);
+    }
 
     return 0;
 }
