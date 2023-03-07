@@ -66,11 +66,18 @@ int main (int argc, char **argv){
     /* Queue init */
     _queue *queue = Malloc(sizeof(_queue));
     queue->items = Malloc(q_size * sizeof(char*));
-    queue->size = q_size;
+
+    for (int i = 0; i < q_size; i++) {
+        queue->items[i] = NULL;
+    }
+
     mtx_init(&queue->queue_lock, NULL);
+    queue->done = 0;
+    queue->size = q_size;
     printf("queue size: %d\n", queue->size);
     queue->front = 0;
     queue->rear = 0;
+
 
 
     /* Threadpool init */
@@ -91,15 +98,24 @@ int main (int argc, char **argv){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
             /* enqueue() is called recursively from explorer()*/
-            done = 1; /* This will stop the threadpool */
         }
     }
-    done = 1;
 
-    /*
+    lock(&queue->queue_lock);
+    queue->done = 1;
+    printf("done setted and not_empty sent\n");
+
+    /* At this point i will not insert any file into the queue
+     * I need to send a not_empty signal in order to free all threads that where waiting
+     * in (isEmpty && done == 0*/
+
+    cond_broadcast(&not_empty);
+    unlock(&queue->queue_lock);
+
     for (int i = 0; i < n_threads; i++) {
+        printf("joining\n");
         join(threadpool[i], NULL);
     }
-    */
+
     return 0;
 }

@@ -32,13 +32,15 @@ void explorer(char *dir_name, _queue *queue){
     else{
         errno = 0;
         struct dirent *file;
+
+
         while ( (file = readdir(dir)) != NULL && (errno == 0 ) ){
+
+            char *updated_path = Malloc(PATH_MAX * sizeof(char));
 
             if (strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0) {
                 continue;
             }
-
-            char *updated_path = malloc(PATH_MAX * sizeof(char));
 
             strncpy(updated_path, dir_name, strlen(dir_name) + 1);
             strncat(updated_path, "/", 2);
@@ -48,17 +50,18 @@ void explorer(char *dir_name, _queue *queue){
                 explorer(updated_path, queue);
             }
             else {
-                //printf("enqueuing file: %s\n", updated_path);
                 enqueue(queue, updated_path);
             }
-
+            //free(updated_path);
         }
 
         if (errno != 0) {
             perror("readdir");
+
         }
         else {
             closedir(dir);
         }
     }
+    return;
 }

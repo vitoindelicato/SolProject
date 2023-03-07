@@ -62,6 +62,14 @@ void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
     }
 }
 
+void cond_broadcast(pthread_cond_t *cond){
+    int err;
+    if((err = pthread_cond_broadcast(cond)) != 0){
+        perror("Error while broadcasting condition");
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 
 void cond_signal(pthread_cond_t *cond){

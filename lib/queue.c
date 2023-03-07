@@ -5,7 +5,7 @@
 
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
-extern pthread_mutex_t q_mtx;
+
 
 char *dequeue(_queue *queue){
 
@@ -14,9 +14,10 @@ char *dequeue(_queue *queue){
      * So it is not necessary to do it again even here
      * Same thing even for unlock*/
 
-    char *filename = (char *) Malloc(sizeof(char) * 255);
+
+    char *filename;
     filename = queue->items[queue->rear];
-    printf("dequeueing: %s\n", queue->items[queue->rear]);
+    printf("\033[1;31m[Dequeueing]:\033[0m %s\n", queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
     cond_signal(&not_full);
@@ -31,17 +32,24 @@ void enqueue(_queue *queue, char *filename){
     lock(&queue->queue_lock);
 
     while(isFull(queue)) {
+        printf("isFull wait");
         cond_wait(&not_full, &queue->queue_lock);
     }
 
     /* dequeue() will be called only by threads */
 
-    printf("enqueuing file: %s\n", filename);
+    printf("\033[1;32m[Enqueueing]:\033[0m %s\n", filename);
+
+    //printf("enqueuing file: %s\n", filename);
     queue->items[queue->front] = filename;
     queue->front = (queue->front + 1) % queue->size;
 
-    cond_signal(&not_empty);
+    if(queue->done == 1){
+        printf("this should be last enqueue\n");
+    }
+
     unlock(&queue->queue_lock);
+    cond_signal(&not_empty);
 }
 
 
@@ -52,7 +60,7 @@ int isFull(_queue *queue){
      * and that position is already hosting a file name
      * */
 
-    if( (queue->front)+1 % queue->size == queue->rear && queue->items[queue->rear] != NULL){
+    if( (queue->front) % queue->size == queue->rear && queue->items[queue->rear] != NULL){
         return 1;
     }
     else{
@@ -68,18 +76,7 @@ int isEmpty(_queue *queue){
     if( (queue->front) % queue->size == queue->rear && queue->items[queue->front] == NULL){
         return 1;
     }
-    return 0;
-}
-
-
-void print_queue(_queue *queue){
-    printf("Printing queue:\n");
-    for (int i = 0; i < queue->size; i++){
-        if (queue->items[i] != NULL){
-            printf("%s\n", queue->items[i]);
-        }
-        else{
-            printf("NULL\n");
-        }
+    else{
+        return 0;
     }
 }
