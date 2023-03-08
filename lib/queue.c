@@ -19,6 +19,7 @@ char *dequeue(_queue *queue){
     char *filename;
     filename = queue->items[queue->rear];
     printf("\033[1;31m[Dequeueing]:\033[0m %s\n", queue->items[queue->rear]);
+    //free(queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
     cond_signal(&not_full);
@@ -41,7 +42,12 @@ void enqueue(_queue *queue, char *filename){
 
     printf("\033[1;32m[Enqueueing]:\033[0m %s\n", filename);
 
-    queue->items[queue->front] = filename;
+
+    if(queue->items[queue->front] == NULL){
+       queue->items[queue->front] = Malloc(strlen(filename)+1 * sizeof(char));
+    }
+
+    strncpy(queue->items[queue->front], filename, strlen(filename) +1);
     queue->front = (queue->front + 1) % queue->size;
 
     if(queue->done == 1){
