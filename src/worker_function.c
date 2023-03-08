@@ -29,19 +29,23 @@ void *worker_function(void *args){
         }
 
         if(isEmpty(queue) && queue->done == 1){
-            unlock(&queue->q_lock);
+            unlock(&queue->q_lock);;
+
             return NULL;
         }
 
         filename = dequeue(queue);
 
         if(filename == NULL && queue->done == 1){
-            unlock(&queue->q_lock);
+            unlock(&queue->q_lock);//free(filename);
+
             return (void*)0;
         }
 
         printf("\033[1;34m[Thread]:\033[0m %ld is working on file %s\n", pthread_self(), filename);
         unlock(&queue->q_lock);
+
+        free(filename);
 
 
     }
