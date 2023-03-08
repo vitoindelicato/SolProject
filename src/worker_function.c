@@ -24,7 +24,6 @@ void *worker_function(void *args){
 
 
         while(isEmpty(queue) && queue->done == 0){
-            printf("isEmpty wait \n");
             cond_wait(&not_empty, &queue->q_lock);
         }
 

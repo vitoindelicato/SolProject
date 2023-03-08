@@ -72,7 +72,6 @@ int main (int argc, char **argv){
     mtx_init(&queue->q_lock, NULL);
     queue->done = 0;
     queue->size = q_size;
-    //printf("queue size: %d\n", queue->size);
     queue->front = 0;
     queue->rear = 0;
 
@@ -112,7 +111,6 @@ int main (int argc, char **argv){
     unlock(&queue->q_lock);
 
     for (int i = 0; i < n_threads; i++) {
-        printf("joining\n");
         join(threadpool[i], NULL);
     }
 
