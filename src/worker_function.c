@@ -17,33 +17,34 @@ void *worker_function(void *args){
 
     _queue *queue = (_queue *) args;
     char *filename;
+    // pthread_cleanup_push(cleanup_handler, args, &queue->q_lock);
 
     while(1){
-        lock(&queue->queue_lock);
+        lock(&queue->q_lock);
 
 
         while(isEmpty(queue) && queue->done == 0){
             printf("isEmpty wait \n");
-            cond_wait(&not_empty, &queue->queue_lock);
+            cond_wait(&not_empty, &queue->q_lock);
         }
 
         if(isEmpty(queue) && queue->done == 1){
-            unlock(&queue->queue_lock);
+            unlock(&queue->q_lock);
             return NULL;
         }
 
         filename = dequeue(queue);
 
         if(filename == NULL && queue->done == 1){
-            unlock(&queue->queue_lock);
+            unlock(&queue->q_lock);
             return (void*)0;
         }
 
         printf("\033[1;34m[Thread]:\033[0m %ld is working on file %s\n", pthread_self(), filename);
-        unlock(&queue->queue_lock);
+        unlock(&queue->q_lock);
 
 
     }
-    return (void*)0;
+
 }
 
