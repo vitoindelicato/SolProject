@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "queue.h"
 #include "enhanced_sc.h"
@@ -29,18 +30,17 @@ char *dequeue(_queue *queue){
 
 void enqueue(_queue *queue, char *filename){
 
-    lock(&queue->queue_lock);
+    lock(&queue->q_lock);
 
     while(isFull(queue)) {
         printf("isFull wait");
-        cond_wait(&not_full, &queue->queue_lock);
+        cond_wait(&not_full, &queue->q_lock);
     }
 
     /* dequeue() will be called only by threads */
 
     printf("\033[1;32m[Enqueueing]:\033[0m %s\n", filename);
 
-    //printf("enqueuing file: %s\n", filename);
     queue->items[queue->front] = filename;
     queue->front = (queue->front + 1) % queue->size;
 
@@ -48,7 +48,7 @@ void enqueue(_queue *queue, char *filename){
         printf("this should be last enqueue\n");
     }
 
-    unlock(&queue->queue_lock);
+    unlock(&queue->q_lock);
     cond_signal(&not_empty);
 }
 

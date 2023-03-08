@@ -21,8 +21,8 @@ exe	:
 
 
 custom :
-	valgrind --track-origins=yes ./main -q 3 -n 4 -d yeye file*
+	valgrind --track-origins=yes  --leak-check=full ./main -q 3 -n 4 -d yeye file*
 
 
 default :
-	valgrind --track-origins=yes ./main -d yeye file*
+	valgrind --track-origins=yes  --leak-check=full ./main -d yeye file*

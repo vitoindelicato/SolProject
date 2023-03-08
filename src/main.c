@@ -13,9 +13,7 @@
 
 pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
-// pthread_mutex_t q_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-int done = 0;
 
 int main (int argc, char **argv){
 
@@ -71,10 +69,10 @@ int main (int argc, char **argv){
         queue->items[i] = NULL;
     }
 
-    mtx_init(&queue->queue_lock, NULL);
+    mtx_init(&queue->q_lock, NULL);
     queue->done = 0;
     queue->size = q_size;
-    printf("queue size: %d\n", queue->size);
+    //printf("queue size: %d\n", queue->size);
     queue->front = 0;
     queue->rear = 0;
 
@@ -97,11 +95,12 @@ int main (int argc, char **argv){
     if (dir_name != NULL){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
+
             /* enqueue() is called recursively from explorer()*/
         }
     }
 
-    lock(&queue->queue_lock);
+    lock(&queue->q_lock);
     queue->done = 1;
     printf("done setted and not_empty sent\n");
 
@@ -110,12 +109,20 @@ int main (int argc, char **argv){
      * in (isEmpty && done == 0*/
 
     cond_broadcast(&not_empty);
-    unlock(&queue->queue_lock);
+    unlock(&queue->q_lock);
 
     for (int i = 0; i < n_threads; i++) {
         printf("joining\n");
         join(threadpool[i], NULL);
     }
+
+
+
+    free(queue->items);
+    free(queue);
+
+
+
 
     return 0;
 }

@@ -1,6 +1,7 @@
 #include <pthread.h>
 
 
+
 /* THREADS SYSTEM CALLS */
 void lock(pthread_mutex_t *mutex);
 void unlock(pthread_mutex_t *mutex);
@@ -15,6 +16,8 @@ void cond_signal(pthread_cond_t *cond);
 void cond_broadcast(pthread_cond_t *cond);
 void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr);
 void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr);
+
+// static void cleanup_handler(void *arg);
 
 
 /* MEMORY ALLOCATION SYSTEM CALLS */

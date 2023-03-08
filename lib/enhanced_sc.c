@@ -31,8 +31,9 @@ void cancel(pthread_t *tid){
 }
 
 /*
-static void cleanup(void* arg, pthread_mutex_t *mtx) {
-    free(arg);
+static void cleanup_handler(void* arg) {
+    _queue *queue = (_queue *) arg;
+    free(queue->items);
     unlock(mtx);
 }
 */
@@ -62,6 +63,7 @@ void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
     }
 }
 
+
 void cond_broadcast(pthread_cond_t *cond){
     int err;
     if((err = pthread_cond_broadcast(cond)) != 0){
@@ -69,7 +71,6 @@ void cond_broadcast(pthread_cond_t *cond){
         exit(EXIT_FAILURE);
     }
 }
-
 
 
 void cond_signal(pthread_cond_t *cond){
@@ -88,6 +89,7 @@ void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
         exit(EXIT_FAILURE);
     }
 }
+
 
 void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr){
     int err;

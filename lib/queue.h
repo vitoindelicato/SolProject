@@ -5,7 +5,7 @@ typedef struct{
     int rear;
     int size;
     int done;
-    pthread_mutex_t queue_lock;
+    pthread_mutex_t q_lock;
 } _queue;
 
 
