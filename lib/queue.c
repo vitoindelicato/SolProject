@@ -19,7 +19,6 @@ char *dequeue(_queue *queue){
     char *filename;
     filename = queue->items[queue->rear];
     printf("\033[1;31m[Dequeueing]:\033[0m %s\n", queue->items[queue->rear]);
-    //free(queue->items[queue->rear]);
     queue->items[queue->rear] = NULL;
     queue->rear = (queue->rear + 1) % queue->size;
     cond_signal(&not_full);

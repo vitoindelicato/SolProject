@@ -10,6 +10,7 @@
 
 int isDir(char *path){
     struct stat info;
+
     if(stat(path, &info) == -1){
         perror("stat");
         exit(EXIT_FAILURE);

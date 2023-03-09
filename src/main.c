@@ -94,7 +94,6 @@ int main (int argc, char **argv){
     if (dir_name != NULL){
         if( isDir(dir_name)){
             explorer(dir_name, queue);
-
             /* enqueue() is called recursively from explorer()*/
         }
     }

@@ -12,17 +12,16 @@ system_calls = $(LIBS)/enhanced_sc*
 
 .PHONY: default custom
 
-main	: main.c $(tools) $(queue) $(threads) $(system_calls)
+farm	: main.c $(tools) $(queue) $(threads) $(system_calls)
 	$(CC) $(CFLAGS) $^ -o $@
 
 
 exe	:
 	./main
 
-
 custom :
-	valgrind --track-origins=yes  --leak-check=full -s ./main -q 3 -n 4 -d yeye file*
+	valgrind --track-origins=yes  --leak-check=full -s ./farm -q 3 -n 4 -d yeye file*
 
 
 default :
-	valgrind --track-origins=yes  --leak-check=full -s ./main -d yeye file*
+	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*
