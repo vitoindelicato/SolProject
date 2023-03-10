@@ -17,8 +17,8 @@ void calculator(_node *node){
     * It will open the file, and will make the calculations based on the data contained by the file
     */
     long i = 0;
-    //long *result = (long *) malloc(sizeof(long));
-    char line[100] = {'\0'};
+    long result = 0;
+    char line[100];
 
     FILE* fp;
     fp = fopen(node->filename, "rb");
@@ -30,9 +30,11 @@ void calculator(_node *node){
     while( fgets(line, 100, fp) != NULL){
         //printf("%s", line);
 
-        *node->result = *node->result + ( i *  strtol(line, NULL, 10));
+        result = result + ( i *  strtol(line, NULL, 10));
         i++;
     }
+    //printf("%ld\n", result);
+    node->result = result;
     fclose(fp);
 }
 
@@ -46,7 +48,7 @@ void *worker_function(void *args){
      * then it will send the data somewhere...*/
 
     _queue *queue = (_queue *) args;
-    _node *node = Malloc(sizeof(_node));
+    _node node;
     char *filename;
 
     while(1){
@@ -72,15 +74,16 @@ void *worker_function(void *args){
 
         unlock(&queue->q_lock);
 
+        node.filename = NULL;
+        node.filename = filename;
 
-        node->filename = filename;
 
-
-        calculator(node);
-        printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %ld\n", pthread_self(), node->filename, *(node->result));
+        calculator(&node);
+        printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %ld\n", pthread_self(), node.filename, node.result);
         free(filename);
         //free(node->filename);
-        //free(node);
+       // ree(node.result);
+        //free(node.filename);
 
     }
 

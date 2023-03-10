@@ -1,5 +1,5 @@
 
 typedef struct {
     char *filename;
-    long *result;
+    long result;
 } _node;
