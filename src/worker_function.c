@@ -11,14 +11,14 @@ extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
 
 
-void calculator(_node *node){
+long calculator(_node *node){
 
     /* This function will be called by the thread function
     * It will open the file, and will make the calculations based on the data contained by the file
     */
-    long i = 0;
-    long result = 0;
-    char line[100];
+    long int i = 0;
+    long int result = 0;
+    unsigned char line[8];
 
     FILE* fp;
     fp = fopen(node->filename, "rb");
@@ -27,15 +27,17 @@ void calculator(_node *node){
         printf("Error while opening file %s", node->filename);
     }
 
-    while( fgets(line, 100, fp) != NULL){
-        //printf("%s", line);
 
-        result = result + ( i *  strtol(line, NULL, 10));
+    while (fread(line, sizeof(line), 1, fp) == 1){
+
+        // Somma per ottenere il risoltato relativo ad ogni file
+        //long number = *((long *)line);
+        result = i * *(line) + result;
         i++;
     }
     //printf("%ld\n", result);
-    node->result = result;
     fclose(fp);
+    return result;
 }
 
 
@@ -67,9 +69,9 @@ void *worker_function(void *args){
 
         filename = dequeue(queue);
 
-        if(filename == NULL && queue->done == 1){
+        if(filename == NULL && queue->done == 1) {
             unlock(&queue->q_lock);
-            return (void*)0;
+            return (void *) 0;
         }
 
         unlock(&queue->q_lock);
@@ -78,13 +80,9 @@ void *worker_function(void *args){
         node.filename = filename;
 
 
-        calculator(&node);
-        printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %ld\n", pthread_self(), node.filename, node.result);
+        node.result = calculator(&node);
+        printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
         free(filename);
-        //free(node->filename);
-       // ree(node.result);
-        //free(node.filename);
-
     }
 
 }

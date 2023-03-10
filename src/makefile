@@ -24,4 +24,4 @@ custom :
 
 
 default :
-	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*
+	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -d testdir
