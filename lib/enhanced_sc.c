@@ -1,9 +1,9 @@
-//#include "enhanced_sc.h"
+#include "enhanced_sc.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <errno.h>
-
+#include <unistd.h>
 /* THREAD FUNCTIONS SECTION */
 void lock(pthread_mutex_t *mutex){
     int err;
@@ -21,22 +21,6 @@ void unlock(pthread_mutex_t *mutex){
     }
 }
 
-
-void cancel(pthread_t *tid){
-    int err;
-    if((err = pthread_cancel(*tid)) != 0){
-        perror("Error while canceling thread");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/*
-static void cleanup_handler(void* arg) {
-    _queue *queue = (_queue *) arg;
-    free(queue->items);
-    unlock(mtx);
-}
-*/
 
 void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args){
     int err;
@@ -107,4 +91,39 @@ void *Malloc(size_t size){
         exit(EXIT_FAILURE);
     }
     return ptr;
+}
+
+
+
+size_t readn(int fd, void *ptr, size_t n) {
+    size_t   nleft;
+    ssize_t  nread;
+
+    nleft = n;
+    while (nleft > 0) {
+        if((nread = read(fd, ptr, nleft)) < 0) {
+            if (nleft == n) return -1; /* error, return -1 */
+            else break; /* error, return amount read so far */
+        } else if (nread == 0) break; /* EOF */
+        nleft -= nread;
+        ptr   += nread;
+    }
+    return(n - nleft); /* return >= 0 */
+}
+
+
+size_t writen(int fd, void *ptr, size_t n) {
+    size_t   nleft;
+    ssize_t  nwritten;
+
+    nleft = n;
+    while (nleft > 0) {
+        if((nwritten = write(fd, ptr, nleft)) < 0) {
+            if (nleft == n) return -1; /* error, return -1 */
+            else break; /* error, return amount written so far */
+        } else if (nwritten == 0) break;
+        nleft -= nwritten;
+        ptr   += nwritten;
+    }
+    return(n - nleft); /* return >= 0 */
 }

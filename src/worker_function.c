@@ -2,16 +2,21 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <errno.h>
+#include <unistd.h>
+#include <math.h>
 #include "../lib/queue.h"
 #include "../lib/enhanced_sc.h"
-#include "../lib/node.h"
 
 
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
+extern struct sockaddr_un *saddr;
 
 
-long calculator(_node *node){
+long calculator(char *filename){
 
     /* This function will be called by the thread function
     * It will open the file, and will make the calculations based on the data contained by the file
@@ -21,10 +26,10 @@ long calculator(_node *node){
     unsigned char line[8];
 
     FILE* fp;
-    fp = fopen(node->filename, "rb");
+    fp = fopen(filename, "rb");
 
     if (fp == NULL) {
-        printf("Error while opening file %s", node->filename);
+        printf("Error while opening file %s", filename);
     }
 
 
@@ -50,8 +55,10 @@ void *worker_function(void *args){
      * then it will send the data somewhere...*/
 
     _queue *queue = (_queue *) args;
-    _node node;
     char *filename;
+    long int result;
+    char *buffer;
+    int fd, ret_val;
 
     while(1){
         lock(&queue->q_lock);
@@ -76,13 +83,39 @@ void *worker_function(void *args){
 
         unlock(&queue->q_lock);
 
-        node.filename = NULL;
-        node.filename = filename;
+        result = calculator(filename);
+        int digits = floor(log10(result) + 1);
+
+        buffer = Malloc(sizeof(char) * (digits + strlen(filename) + 2 ));
+        snprintf(buffer, digits+1, "%ld", result);
+        strncat(buffer, ";", 2);
+        strncat(buffer, filename, strlen(filename));
+
+        //printf("%s\n", buffer);
 
 
-        node.result = calculator(&node);
-        printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
+
+
+        fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (fd == -1) {
+            fprintf(stderr, "socket failed [%s]\n", strerror(errno));
+            return NULL;
+        }
+
+        while((ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1)){
+            if (errno == ENOENT){
+                printf("[CLIENT]:\tSocket not found, retrying...\n");
+                sleep(2*0.01);
+            }
+            else exit(EXIT_FAILURE);
+        }
+
+        printf("Created client socket with fd: %d\n", fd);
+        //printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
+        writen(fd, buffer, strlen(buffer));
+        //close(fd);
         free(filename);
+        free(buffer);
     }
 
 }

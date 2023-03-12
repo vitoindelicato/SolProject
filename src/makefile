@@ -1,18 +1,19 @@
 CC = gcc
-CFLAGS = -Wall -g -pedantic -lpthread
+CFLAGS = -Wall -g -pedantic -lpthread -lm
 LIBS = ../lib
 
 tools = $(LIBS)/tools*
 queue = $(LIBS)/queue*
 threads = worker_function*
 system_calls = $(LIBS)/enhanced_sc*
+collector = collector*
 
 #$(LIBS)/tools.h $(LIBS)/queue.h $(LIBS)/tools.c $(LIBS)/queue.c
 #$(tools) $(queue) $(threads)
 
 .PHONY: default custom
 
-farm	: main.c $(tools) $(queue) $(threads) $(system_calls)
+farm	: main.c $(tools) $(queue) $(threads) $(system_calls) $(collector)
 	$(CC) $(CFLAGS) $^ -o $@
 
 
@@ -24,4 +25,5 @@ custom :
 
 
 default :
-	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -d testdir
+	rm farm.sck
+	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*
