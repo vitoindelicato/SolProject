@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <signal.h>
+#include <fcntl.h>
 #include "../lib/node.h"
 
 #define SOCKNAME "farm.sck"
@@ -39,8 +40,18 @@ void *client_handler(void *args) {
     char *buffer = calloc(PATH_MAX, sizeof(char));
     int fd = *(int *)args;
     readn(fd, buffer, PATH_MAX);
+
+
+    if(strcmp(buffer, "DONE") == 0) {
+        printf("Received DONE\n");
+        close(fd);
+        timeout++;
+        free(buffer);
+        return NULL;
+    }
     printf("Received: %s\n", buffer);
     free(buffer);
+    close(fd);
     return NULL;
 }
 
@@ -50,6 +61,7 @@ int create_server_socket(struct sockaddr_un *saddr) {
     int fd, ret_val;
     /* Step1: create server socket */
     fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    fcntl(fd, F_SETFL,  O_NONBLOCK); /* I make the server non-blocking */
     if (fd == -1) {
         fprintf(stderr, "socket failed [%s]\n", strerror(errno));
         return -1;
@@ -89,6 +101,7 @@ void collector() {
      * */
     //int sig;
 
+    /*
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
 
@@ -98,6 +111,7 @@ void collector() {
         perror("Couldn't set SIGALRM handler");
         exit(EXIT_FAILURE);
     }
+     */
 
 
     struct sockaddr_un new_addr;
@@ -114,26 +128,22 @@ void collector() {
 
 
 
-    pthread_t threadpool[n_threads];
+    pthread_t threadpool[100];
     int i = 0;
-    while(timeout == 0){
-        /*
-         * TODO: add conditions to this while
-         *   maybe a timer?
-        */
 
-        alarm(3);
-        int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
-        alarm(0); /* cancel alarm */
+    while(timeout < n_threads -1){
+        /* Because every thread will return 'DONE' after checking empty queue and done flag,
+         * so I have to wait every worker that officially finish to work in order to avoid some data missing*/
+
+        int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen); /* Accept is non-blocking */
 
         if (new_client == -1) {
-            if (errno != EINTR){
+            if (errno != EAGAIN && errno != EWOULDBLOCK){
                 fprintf(stderr, "accept failed [%s][%d]\n", strerror(errno), errno);
                 return;
             }
             else{
-                printf("accept failed because of alarm\n");
-                break;
+                continue;
             }
         }
         else{
@@ -144,7 +154,6 @@ void collector() {
 
     }
 
-    printf("broke while\n");
     for (int j = 0; j < i; j++) {
         join(threadpool[j], NULL);
     }
