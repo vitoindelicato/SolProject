@@ -46,13 +46,33 @@ long calculator(char *filename){
 }
 
 
+int connect_wrapper(){
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd == -1) {
+        fprintf(stderr, "socket failed [%s]\n", strerror(errno));
+        return -1;
+    }
+
+    int ret_val;
+    while(( ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1) ){
+        if (errno == ENOENT){
+            printf("[CLIENT]:\tSocket not found, retrying...\n");
+            sleep(2*0.01);
+        }
+        else exit(EXIT_FAILURE);
+    }
+
+    printf("Created client socket with fd: %d\n", fd);
+    return fd;
+}
+
 
 void *worker_function(void *args){
 
     /* Here I will write the thread function
      * Each thread will wait untill the concurrent queue is not empty
      * Then it will take one filename, will open the file, and will make its calculations based on the data contained by the file
-     * then it will send the data somewhere...*/
+     * then it will send the data to the server created by collector*/
 
     _queue *queue = (_queue *) args;
     char *filename;
@@ -69,17 +89,14 @@ void *worker_function(void *args){
         }
 
         if(isEmpty(queue) && queue->done == 1){
-            unlock(&queue->q_lock);;
-
-            return NULL;
+            fd = connect_wrapper();
+            writen(fd, "DONE", 5);
+            close(fd);
+            unlock(&queue->q_lock);
+            return (void*) 0;
         }
 
         filename = dequeue(queue);
-
-        if(filename == NULL && queue->done == 1) {
-            unlock(&queue->q_lock);
-            return (void *) 0;
-        }
 
         unlock(&queue->q_lock);
 
@@ -93,23 +110,7 @@ void *worker_function(void *args){
 
         //printf("%s\n", buffer);
 
-
-
-
-        fd = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (fd == -1) {
-            fprintf(stderr, "socket failed [%s]\n", strerror(errno));
-            return NULL;
-        }
-
-        while((ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1)){
-            if (errno == ENOENT){
-                printf("[CLIENT]:\tSocket not found, retrying...\n");
-                sleep(2*0.01);
-            }
-            else exit(EXIT_FAILURE);
-        }
-
+        fd = connect_wrapper();
         printf("Created client socket with fd: %d\n", fd);
         //printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
         writen(fd, buffer, strlen(buffer));
