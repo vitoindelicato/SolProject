@@ -25,5 +25,5 @@ custom :
 
 
 default :
-	rm farm.sck
+	#rm farm.sck
 	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*

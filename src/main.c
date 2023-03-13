@@ -8,6 +8,7 @@
 #include "collector.h"
 #include <sys/un.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 
 #define TD_POOL_SIZE  4
@@ -21,12 +22,13 @@ pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
 
 
 struct sockaddr_un saddr;
+int n_threads = TD_POOL_SIZE;
 
 int main (int argc, char **argv){
 
     int opt;
 
-    int n_threads = TD_POOL_SIZE;
+
     int q_size = QUEUE_SIZE;
     int t_delay = TIME_DELAY;
 
@@ -90,11 +92,12 @@ int main (int argc, char **argv){
 
     pid_t pid = fork();
 
-    if(pid == 0){
+    if(pid > 0){
         collector();
+        waitpid(pid, NULL, 0);
     }
 
-    else if(pid > 0) {
+    else if(pid == 0) {
         /* Threadpool init */
         //sleep(1);
 
@@ -134,9 +137,9 @@ int main (int argc, char **argv){
         }
     }
 
-
     free(queue->items);
     free(queue);
+    printf("exiting main\n");
 
     return 0;
 }

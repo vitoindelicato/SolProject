@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <pthread.h>
+#include <signal.h>
 #include "../lib/node.h"
 
 #define SOCKNAME "farm.sck"
@@ -15,6 +16,8 @@
 
 
 extern int n_threads;
+socklen_t addrlen;
+volatile __sig_atomic_t timeout = 0;
 /*
  * Collector has to:
  * Create socket
@@ -27,12 +30,14 @@ extern int n_threads;
 
 
 
+static void sigalrm_handler(int signum) {
+    timeout = 1;
+    printf("Received SIGALRM\n");
+}
+
 void *client_handler(void *args) {
     char *buffer = calloc(PATH_MAX, sizeof(char));
     int fd = *(int *)args;
-    //while(readn(fd, buffer, PATH_MAX)!=0){
-
-    //}
     readn(fd, buffer, PATH_MAX);
     printf("Received: %s\n", buffer);
     free(buffer);
@@ -43,8 +48,7 @@ void *client_handler(void *args) {
 
 int create_server_socket(struct sockaddr_un *saddr) {
     int fd, ret_val;
-
-    /* Step1: create a TCP socket */
+    /* Step1: create server socket */
     fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1) {
         fprintf(stderr, "socket failed [%s]\n", strerror(errno));
@@ -52,11 +56,8 @@ int create_server_socket(struct sockaddr_un *saddr) {
     }
     printf("Created server socket with fd: %d\n", fd);
 
-    /* Initialize the socket address structure */
 
-
-
-    /* Step2: bind the socket to port 7000 on the local host */
+    /* Step2: bind the socket */
     ret_val = bind(fd, (struct sockaddr *)saddr, sizeof(struct sockaddr_un));
     if (ret_val != 0) {
         fprintf(stderr, "bind failed [%s]\n", strerror(errno));
@@ -65,7 +66,7 @@ int create_server_socket(struct sockaddr_un *saddr) {
     }
 
     /* Step3: listen for incoming connections */
-    ret_val = listen(fd, 5);
+    ret_val = listen(fd, MAX_CONNECTIONS);
     if (ret_val != 0) {
         fprintf(stderr, "listen failed [%s]\n", strerror(errno));
         close(fd);
@@ -75,9 +76,29 @@ int create_server_socket(struct sockaddr_un *saddr) {
 
 }
 
-socklen_t addrlen;
+
 
 void collector() {
+
+    //int index = 0;
+    //_node *array;
+    //int done = 0;
+
+    /* I will end loop of spwaning thread when timeout with alarm signalm will trigger
+     * obviously timeout has to be greater than t_delay
+     * */
+    //int sig;
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+
+
+    sa.sa_handler = sigalrm_handler;
+    if ( sigaction(SIGALRM, &sa, NULL) == -1 ) {
+        perror("Couldn't set SIGALRM handler");
+        exit(EXIT_FAILURE);
+    }
+
 
     struct sockaddr_un new_addr;
     new_addr.sun_family = AF_UNIX;
@@ -93,19 +114,39 @@ void collector() {
 
 
 
-    while(1){ /* TODO: add conditions to this while*/
+    pthread_t threadpool[n_threads];
+    int i = 0;
+    while(timeout == 0){
+        /*
+         * TODO: add conditions to this while
+         *   maybe a timer?
+        */
+
+        alarm(3);
         int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
+        alarm(0); /* cancel alarm */
 
         if (new_client == -1) {
-            fprintf(stderr, "accept failed [%s]\n", strerror(errno));
-            return;
+            if (errno != EINTR){
+                fprintf(stderr, "accept failed [%s][%d]\n", strerror(errno), errno);
+                return;
+            }
+            else{
+                printf("accept failed because of alarm\n");
+                break;
+            }
         }
         else{
-            pthread_t handler;
-            create(&handler, NULL, client_handler, &new_client);
+            create(&threadpool[i], NULL, client_handler, &new_client);
+            i++;
         }
-        sleep(0.2); //can't figure out why this is needed
+        sleep(0.2); /*can't figure out why this is needed - without this readn returns null*/
 
+    }
+
+    printf("broke while\n");
+    for (int j = 0; j < i; j++) {
+        join(threadpool[j], NULL);
     }
 
 

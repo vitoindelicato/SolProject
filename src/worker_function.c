@@ -113,7 +113,7 @@ void *worker_function(void *args){
         printf("Created client socket with fd: %d\n", fd);
         //printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
         writen(fd, buffer, strlen(buffer));
-        //close(fd);
+        close(fd);
         free(filename);
         free(buffer);
     }
