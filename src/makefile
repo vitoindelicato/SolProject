@@ -7,13 +7,14 @@ queue = $(LIBS)/queue*
 threads = worker_function*
 system_calls = $(LIBS)/enhanced_sc*
 collector = collector*
+node = $(LIBS)/node*
 
 #$(LIBS)/tools.h $(LIBS)/queue.h $(LIBS)/tools.c $(LIBS)/queue.c
 #$(tools) $(queue) $(threads)
 
 .PHONY: default custom
 
-farm	: main.c $(tools) $(queue) $(threads) $(system_calls) $(collector)
+farm	: main.c $(tools) $(queue) $(threads) $(system_calls) $(collector) $(node)
 	$(CC) $(CFLAGS) $^ -o $@
 
 
