@@ -13,7 +13,7 @@ extern pthread_cond_t not_empty;
 
 
 
-void master_worker(int argc, char **argv, int optind){
+void master_worker(int argc, char **argv, char *dir_name, int optind){
 
 
 

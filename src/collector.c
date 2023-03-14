@@ -122,7 +122,7 @@ void collector() {
     int stop = 0;
     _node *head = NULL;
 
-    while(stop < n_threads -1){
+    while(stop < n_threads){
 
         /*
          * Because every thread will return 'DONE' after checking empty queue and done flag,

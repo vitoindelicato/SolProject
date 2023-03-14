@@ -96,7 +96,7 @@ int main (int argc, char **argv) {
         waitpid(pid, NULL, 0);
     } else if (pid == 0) {
         /* Threadpool init */
-        master_worker(argc, argv, dir_name);
+        master_worker(argc, argv, dir_name, optind);
         /*
         pthread_t threadpool[n_threads];
 
