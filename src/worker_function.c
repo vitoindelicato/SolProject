@@ -34,9 +34,6 @@ long calculator(char *filename){
 
 
     while (fread(line, sizeof(line), 1, fp) == 1){
-
-        // Somma per ottenere il risoltato relativo ad ogni file
-        //long number = *((long *)line);
         result = i * *(line) + result;
         i++;
     }
@@ -62,7 +59,7 @@ int connect_wrapper(){
         else exit(EXIT_FAILURE);
     }
 
-    printf("Created client socket with fd: %d\n", fd);
+    //printf("Created client socket with fd: %d\n", fd);
     return fd;
 }
 
@@ -77,8 +74,7 @@ void *worker_function(void *args){
     _queue *queue = (_queue *) args;
     char *filename;
     long int result;
-    char *buffer;
-    int fd, ret_val;
+    int fd;
 
     while(1){
         lock(&queue->q_lock);
@@ -103,7 +99,7 @@ void *worker_function(void *args){
         result = calculator(filename);
         int digits = floor(log10(result) + 1);
 
-        buffer = Malloc(sizeof(char) * (digits + strlen(filename) + 2 ));
+        char *buffer = Malloc(sizeof(char) * (digits + strlen(filename) + 2 ));
         snprintf(buffer, digits+1, "%ld", result);
         strncat(buffer, ";", 2);
         strncat(buffer, filename, strlen(filename));
@@ -111,7 +107,7 @@ void *worker_function(void *args){
         //printf("%s\n", buffer);
 
         fd = connect_wrapper();
-        printf("Created client socket with fd: %d\n", fd);
+        //printf("Created client socket with fd: %d\n", fd);
         //printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
         writen(fd, buffer, strlen(buffer));
         close(fd);

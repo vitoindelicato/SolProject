@@ -139,7 +139,7 @@ int main (int argc, char **argv){
 
     free(queue->items);
     free(queue);
-    printf("exiting main\n");
+    //printf("exiting main\n");
 
     return 0;
 }
