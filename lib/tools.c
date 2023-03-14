@@ -30,7 +30,6 @@ void explorer(char *dir_name, _queue *queue){
     else{
         errno = 0;
         struct dirent *file;
-        printf("exploring %s\n", dir_name);
 
         while ( (file = readdir(dir)) != NULL && (errno == 0 ) ){
 

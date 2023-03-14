@@ -122,7 +122,7 @@ void collector() {
     int stop = 0;
     _node *head = NULL;
 
-    while(stop < n_threads){
+    while(stop == 0){
 
         /*
          * Because every thread will return 'DONE' after checking empty queue and done flag,
@@ -132,8 +132,13 @@ void collector() {
         int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
 
         if (new_client == -1) {
-            fprintf(stderr, "accept failed [%s][%d]\n", strerror(errno), errno);
-            break;
+            if(errno == EINTR){
+                continue;
+            }else{
+                fprintf(stderr, "accept failed [%s][%d]\n", strerror(errno), errno);
+                break;
+            }
+
         }
         else{
             _node *new_node = client_handler(new_client, &stop);

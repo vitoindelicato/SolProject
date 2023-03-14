@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "queue.h"
 #include "enhanced_sc.h"
 
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
+extern volatile __sig_atomic_t queue_interrupt;
 
 
 char *dequeue(_queue *queue){
@@ -32,6 +34,13 @@ void enqueue(_queue *queue, char *filename){
 
     lock(&queue->q_lock);
 
+    if(queue_interrupt == 1){
+        queue->done = 1;
+        //printf("interrupted\n");
+        unlock(&queue->q_lock);
+        return;
+    }
+
     while(isFull(queue)) {
         //printf("isFull wait");
         cond_wait(&not_full, &queue->q_lock);
@@ -39,7 +48,6 @@ void enqueue(_queue *queue, char *filename){
 
     /* dequeue() will be called only by threads */
 
-    //printf("\033[1;32m[Enqueueing]:\033[0m %s\n", filename);
 
 
     if(queue->items[queue->front] == NULL){
@@ -47,6 +55,7 @@ void enqueue(_queue *queue, char *filename){
     }
 
     strncpy(queue->items[queue->front], filename, strlen(filename) +1);
+    //printf("\033[1;32m[Enqueueing]:\033[0m %s\n", filename);
     queue->front = (queue->front + 1) % queue->size;
 
     if(queue->done == 1){

@@ -14,6 +14,7 @@
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
 extern struct sockaddr_un *saddr;
+extern int t_delay;
 
 
 long calculator(char *filename){
@@ -53,7 +54,7 @@ int connect_wrapper(){
     while(( ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1) ){
         if (errno == ENOENT){
             printf("[CLIENT]:\tSocket not found, retrying...\n");
-            sleep(2*0.01);
+            sleep(2);
         }
         else exit(EXIT_FAILURE);
     }
@@ -79,7 +80,11 @@ void *worker_function(void *args){
         lock(&queue->q_lock);
 
 
-        while(isEmpty(queue) && queue->done == 0){
+        while(isEmpty(queue)){
+            if(queue->done == 1){
+                unlock(&queue->q_lock);
+                return (void*) 0;
+            }
             cond_wait(&not_empty, &queue->q_lock);
         }
 
@@ -88,9 +93,9 @@ void *worker_function(void *args){
              * No more things to do.
              * Thread send done message to server before exiting.
              */
-            fd = connect_wrapper();
-            writen(fd, "DONE", 5);
-            close(fd);
+            //fd = connect_wrapper();
+            //writen(fd, "DONE", 5);
+            //close(fd);
             unlock(&queue->q_lock);
             return (void*) 0;
         }
@@ -115,6 +120,8 @@ void *worker_function(void *args){
         close(fd);
         free(filename);
         free(buffer);
+        //printf("sleeping for %d ms\n", t_delay);
+        sleep(t_delay * 0.001);
     }
 
 }

@@ -1,5 +1,7 @@
 #include <stdlib.h>
-
+#include <unistd.h>
+#include <stdio.h>
+#include "worker.h"
 #include "../lib/tools.h"
 #include "worker.h"
 
@@ -9,6 +11,10 @@ extern int n_threads;
 extern int t_delay;
 
 extern pthread_cond_t not_empty;
+extern volatile __sig_atomic_t queue_interrupt;
+
+
+
 
 
 
@@ -41,8 +47,11 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
 
 
     for (int i = optind; i < argc; i++) {
-        enqueue(queue, argv[i]);
+        if(isRegular(argv[i])){
+            enqueue(queue, argv[i]);
+        }
     }
+
 
 
     if (dir_name != NULL) {
@@ -55,7 +64,6 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
 
     lock(&queue->q_lock);
     queue->done = 1;
-    //printf("done setted and not_empty sent\n");
 
     /* At this point i will not insert any file into the queue
      * I need to send a not_empty signal in order to free all threads that where waiting
@@ -68,8 +76,10 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
         join(threadpool[i], NULL);
     }
 
+    int fd = connect_wrapper();
+    writen(fd, "DONE", 5);
+    close(fd);
 
     free(queue->items);
     free(queue);
-    //printf("exiting main\n");
 }
