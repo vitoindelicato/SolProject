@@ -109,13 +109,13 @@ void collector() {
     strcpy(new_addr.sun_path, SOCKNAME);
 
     int server_fd;
+
     /* Get the socket server fd */
     server_fd = create_server_socket(&new_addr); //socket --> bind --> listen
     if (server_fd == -1) {
         fprintf(stderr, "Failed to create a server\n");
         return;
     }
-
 
     int stop = 0;
     _node *head = NULL;

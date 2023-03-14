@@ -21,6 +21,7 @@ long calculator(char *filename){
     /* This function will be called by the thread function
     * It will open the file, and will make the calculations based on the data contained by the file
     */
+
     long int i = 0;
     long int result = 0;
     unsigned char line[8];
@@ -31,7 +32,6 @@ long calculator(char *filename){
     if (fp == NULL) {
         printf("Error while opening file %s", filename);
     }
-
 
     while (fread(line, sizeof(line), 1, fp) == 1){
         result = i * *(line) + result;
@@ -49,7 +49,6 @@ int connect_wrapper(){
         fprintf(stderr, "socket failed [%s]\n", strerror(errno));
         return -1;
     }
-
     int ret_val;
     while(( ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1) ){
         if (errno == ENOENT){
@@ -85,6 +84,10 @@ void *worker_function(void *args){
         }
 
         if(isEmpty(queue) && queue->done == 1){
+            /*
+             * No more things to do.
+             * Thread send done message to server before exiting.
+             */
             fd = connect_wrapper();
             writen(fd, "DONE", 5);
             close(fd);
@@ -93,7 +96,6 @@ void *worker_function(void *args){
         }
 
         filename = dequeue(queue);
-
         unlock(&queue->q_lock);
 
         result = calculator(filename);
