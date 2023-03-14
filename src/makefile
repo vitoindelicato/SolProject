@@ -4,17 +4,18 @@ LIBS = ../lib
 
 tools = $(LIBS)/tools*
 queue = $(LIBS)/queue*
-threads = worker_function*
+threads = worker*
 system_calls = $(LIBS)/enhanced_sc*
 collector = collector*
+master_worker = master_worker*
 node = $(LIBS)/node*
 
 #$(LIBS)/tools.h $(LIBS)/queue.h $(LIBS)/tools.c $(LIBS)/queue.c
 #$(tools) $(queue) $(threads)
 
-.PHONY: default custom
+.PHONY: default custom clean
 
-farm	: main.c $(tools) $(queue) $(threads) $(system_calls) $(collector) $(node)
+farm	: farm.c $(master_worker) $(collector) $(tools) $(queue) $(threads) $(system_calls)  $(node)
 	$(CC) $(CFLAGS) $^ -o $@
 
 
@@ -28,3 +29,8 @@ custom :
 default :
 	#rm farm.sck
 	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*
+
+
+clean :
+	rm -r testdir
+	rm file*

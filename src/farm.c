@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "../lib/tools.h"
 #include "../lib/enhanced_sc.h"
-#include "worker_function.h"
+#include "master_worker.h"
 #include "collector.h"
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -23,41 +23,37 @@ pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
 
 struct sockaddr_un saddr;
 int n_threads = TD_POOL_SIZE;
+int q_size = QUEUE_SIZE;
+int t_delay = TIME_DELAY;
+char *dir_name = NULL;
 
-int main (int argc, char **argv){
+int main (int argc, char **argv) {
 
     int opt;
 
-
-    int q_size = QUEUE_SIZE;
-    int t_delay = TIME_DELAY;
-
-    char *dir_name = NULL;
-
-
-    saddr.sun_family=AF_UNIX;
+    saddr.sun_family = AF_UNIX;
     strcpy(saddr.sun_path, SOCKNAME);
     //int fd;
     //char *filename;
 
 
-    while((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
 
         switch (opt) {
 
             case 'n':
                 n_threads = strtol(optarg, NULL, 10);
-                printf("n_threads: %d\n", n_threads);
+                //printf("n_threads: %d\n", n_threads);
                 break;
 
             case 'q':
                 q_size = strtol(optarg, NULL, 10);
-                printf("q_size: %d\n", q_size);
+                //printf("q_size: %d\n", q_size);
                 break;
 
             case 't':
                 t_delay = strtol(optarg, NULL, 10);
-                printf("t_delay: %d\n", t_delay);
+                //printf("t_delay: %d\n", t_delay);
                 break;
 
             case 'd':
@@ -77,30 +73,31 @@ int main (int argc, char **argv){
     }
 
     /* Queue init */
+    /*
     _queue *queue = Malloc(sizeof(_queue));
     queue->items = Malloc(q_size * sizeof(char*));
 
     for (int i = 0; i < q_size; i++) {
         queue->items[i] = NULL;
     }
+    */
 
+    /*
     mtx_init(&queue->q_lock, NULL);
     queue->done = 0;
     queue->size = q_size;
     queue->front = 0;
     queue->rear = 0;
-
+    */
     pid_t pid = fork();
 
-    if(pid > 0){
+    if (pid > 0) {
         collector();
         waitpid(pid, NULL, 0);
-    }
-
-    else if(pid == 0) {
+    } else if (pid == 0) {
         /* Threadpool init */
-        //sleep(1);
-
+        master_worker(argc, argv, dir_name, optind);
+        /*
         pthread_t threadpool[n_threads];
 
 
@@ -108,19 +105,24 @@ int main (int argc, char **argv){
             create(&threadpool[i], NULL, worker_function, (void *) queue);
         }
 
-
+        */
+        /*
         for (int i = optind; i < argc; i++) {
-            enqueue(queue, argv[i]); /* I was thinking to delegate producer tasks to queue library */
-            /* I mean, if I can send signals from another file it would be goodly wrapped up in queue functions.*/
+            enqueue(queue, argv[i]); / I was thinking to delegate producer tasks to queue library /
+            / I mean, if I can send signals from another file it would be goodly wrapped up in queue functions./
         }
+        */
 
+        /*
         if (dir_name != NULL) {
             if (isDir(dir_name)) {
                 explorer(dir_name, queue);
-                /* enqueue() is called recursively from explorer()*/
+                / enqueue() is called recursively from explorer()/
             }
         }
+        */
 
+        /*
         lock(&queue->q_lock);
         queue->done = 1;
         //printf("done setted and not_empty sent\n");
@@ -128,7 +130,7 @@ int main (int argc, char **argv){
         /* At this point i will not insert any file into the queue
          * I need to send a not_empty signal in order to free all threads that where waiting
          * in (isEmpty && done == 0*/
-
+        /*
         cond_broadcast(&not_empty);
         unlock(&queue->q_lock);
 
@@ -140,6 +142,8 @@ int main (int argc, char **argv){
     free(queue->items);
     free(queue);
     //printf("exiting main\n");
+    */
 
+    }
     return 0;
 }

@@ -10,7 +10,7 @@
 #include "../lib/node.h"
 
 #define SOCKNAME "farm.sck"
-#define MAX_CONNECTIONS 20
+#define MAX_CONNECTIONS 100
 
 
 extern int n_threads;
@@ -103,6 +103,8 @@ int create_server_socket(struct sockaddr_un *saddr) {
 
 
 void collector() {
+    /* Collector is the server which handle requests from client.
+     * client send data and the server operate to sort them in a linked list. */
 
     struct sockaddr_un new_addr;
     new_addr.sun_family = AF_UNIX;
@@ -120,7 +122,7 @@ void collector() {
     int stop = 0;
     _node *head = NULL;
 
-    while(stop < n_threads -1){
+    while(stop < n_threads){
 
         /*
          * Because every thread will return 'DONE' after checking empty queue and done flag,
