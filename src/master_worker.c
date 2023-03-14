@@ -7,7 +7,6 @@
 extern int q_size;
 extern int n_threads;
 extern int t_delay;
-extern char *dir_name;
 
 extern pthread_cond_t not_empty;
 
