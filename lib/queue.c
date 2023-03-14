@@ -33,7 +33,7 @@ void enqueue(_queue *queue, char *filename){
     lock(&queue->q_lock);
 
     while(isFull(queue)) {
-        printf("isFull wait");
+        //printf("isFull wait");
         cond_wait(&not_full, &queue->q_lock);
     }
 

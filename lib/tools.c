@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <string.h>
-#include "queue.h"
+#include "tools.h"
 
 
 int isDir(char *path){
@@ -27,10 +27,10 @@ void explorer(char *dir_name, _queue *queue){
         perror("opendir");
         exit(EXIT_FAILURE);
     }
-
     else{
         errno = 0;
         struct dirent *file;
+        printf("exploring %s\n", dir_name);
 
         while ( (file = readdir(dir)) != NULL && (errno == 0 ) ){
 
@@ -44,10 +44,11 @@ void explorer(char *dir_name, _queue *queue){
                 explorer(updated_path, queue);
             }
             else {
-                enqueue(queue, updated_path);
+                if(isRegular(updated_path)){
+                    enqueue(queue, updated_path);
+                }
             }
         }
-        //free(updated_path);
 
         if (errno != 0) {
             perror("readdir");
@@ -57,4 +58,14 @@ void explorer(char *dir_name, _queue *queue){
             closedir(dir);
         }
     }
+}
+
+
+int isRegular(char *filename){
+    struct stat statPath;
+    if(stat(filename,&statPath)!=0){
+        perror("error on stat");
+        return 0;
+    }
+    return S_ISREG(statPath.st_mode);
 }
