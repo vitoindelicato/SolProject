@@ -15,7 +15,7 @@ char *dequeue(_queue *queue){
     /* This function will be called only from threads
      * At the moment of the call the thread has already acquired the lock
      * So it is not necessary to do it again even here
-     * Same thing even for unlock*/
+     * Same thing for unlock */
 
 
     char *filename;

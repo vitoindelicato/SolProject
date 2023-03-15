@@ -15,34 +15,19 @@
 
 extern int n_threads;
 socklen_t addrlen;
-//volatile __sig_atomic_t stop = 0;
-/*
- * Collector has to:
- * Create socket
- * Handle incoming connections from threads
- * Read data
- * Sort data
- * Print data
- * Close everything should be closed
- */
-
-
-/*
-static void sigalrm_handler(int signum) {
-    stop = 1;
-    printf("Received SIGALRM\n");
-}
-*/
 
 
 _node *node_builder(char *buffer){
     char *token;
     char *filename;
     long int result;
+
     token = strtok(buffer, ";");
     result = strtol(token, NULL, 10);
     token = strtok(NULL, ";");
+
     filename = token;
+
     _node *new_node = create_node(result, filename);
     return new_node;
 
@@ -57,18 +42,17 @@ _node *client_handler(int client_fd, int *stop, _node *head) {
         //printf("Received DONE\n");
         close(client_fd);
         (*stop)++;
-        //free(buffer);
         return NULL;
     }
 
     if(strcmp(buffer, "PRINT") == 0) {
+        printf("Received PRINT\n");
         close(client_fd);
         print_list(head);
         return NULL;
     }
 
     //printf("Received: %s\n", buffer);
-    //free(buffer);
     _node *new_node = node_builder(buffer);
     close(client_fd);
     return new_node;
@@ -106,8 +90,6 @@ int create_server_socket(struct sockaddr_un *saddr) {
 
 }
 
-
-
 void collector() {
     /* Collector is the server which handle requests from client.
      * client send data and the server operate to sort them in a linked list. */
@@ -129,7 +111,6 @@ void collector() {
     _node *head = NULL;
 
     while(stop == 0){
-
 
         int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
 

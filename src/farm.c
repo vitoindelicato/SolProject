@@ -7,7 +7,7 @@
 #include "../lib/enhanced_sc.h"
 #include "master_worker.h"
 #include "collector.h"
-#include "worker.h"
+#include "worker.h" // I really don't like this import, but I'm running out of time :/
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -142,6 +142,7 @@ int main (int argc, char **argv) {
     pid_t pid = fork();
 
     if (pid > 0) { //PADRE
+        //printf("PID: %d\n", getpid());
         master_worker(argc, argv, dir_name, optind);
         waitpid(pid, NULL, 0);
         pthread_cancel(signal_thread);
