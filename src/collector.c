@@ -48,7 +48,7 @@ _node *node_builder(char *buffer){
 
 }
 
-_node *client_handler(int client_fd, int *stop) {
+_node *client_handler(int client_fd, int *stop, _node *head) {
     char buffer[PATH_MAX] = {'\0'};
     readn(client_fd, buffer, PATH_MAX);
 
@@ -58,6 +58,12 @@ _node *client_handler(int client_fd, int *stop) {
         close(client_fd);
         (*stop)++;
         //free(buffer);
+        return NULL;
+    }
+
+    if(strcmp(buffer, "PRINT") == 0) {
+        close(client_fd);
+        print_list(head);
         return NULL;
     }
 
@@ -124,10 +130,6 @@ void collector() {
 
     while(stop == 0){
 
-        /*
-         * Because every thread will return 'DONE' after checking empty queue and done flag,
-        * so I have to wait every worker that officially finish to work in order to avoid missing data
-        */
 
         int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
 
@@ -141,7 +143,7 @@ void collector() {
 
         }
         else{
-            _node *new_node = client_handler(new_client, &stop);
+            _node *new_node = client_handler(new_client, &stop, head);
 
             if(new_node != NULL){
                 insert_node(&head, new_node);

@@ -10,8 +10,6 @@ collector = collector*
 master_worker = master_worker*
 node = $(LIBS)/node*
 
-#$(LIBS)/tools.h $(LIBS)/queue.h $(LIBS)/tools.c $(LIBS)/queue.c
-#$(tools) $(queue) $(threads)
 
 .PHONY: default custom clean
 
@@ -27,9 +25,11 @@ custom :
 
 
 default :
-	#rm farm.sck
 	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -t 2000
 
+test:
+	make
+	./test.sh
 
 clean :
 	rm -r testdir

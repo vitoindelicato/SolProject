@@ -2,13 +2,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include "../lib/tools.h"
 #include "../lib/enhanced_sc.h"
 #include "master_worker.h"
 #include "collector.h"
+#include "worker.h"
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+
 
 
 #define TD_POOL_SIZE  4
@@ -27,6 +30,7 @@ int n_threads = TD_POOL_SIZE;
 int q_size = QUEUE_SIZE;
 int t_delay = TIME_DELAY;
 char *dir_name = NULL;
+int stop_thread = 0;
 
 
 
@@ -35,52 +39,70 @@ static void signal_handler(int signum){
 }
 
 
+static void *thread_signal_handler(void *arg){
+    int sig;
+    sigset_t *set = (sigset_t*)arg;
+
+    while(1){
+
+        sigwait(set, &sig);
+
+        if(sig == SIGUSR1){
+            printf("SIGUSR1 received\n");
+            //signal_handler(sig);
+            int fd = connect_wrapper();
+            writen(fd, "PRINT", 5);
+            close(fd);
+            continue;
+        }
+        else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
+            printf("SIGINT, SIGQUIT, SIGTERM or SIGHUP received\n");
+            signal_handler(sig);
+            continue;
+        }
+
+    }
+    return NULL;
+}
+
+
+
+
 int main (int argc, char **argv) {
 
     int opt;
 
     saddr.sun_family = AF_UNIX;
     strcpy(saddr.sun_path, SOCKNAME);
-    //int fd;
-    //char *filename;
 
 
-    sigset_t set;
-    int sig;
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
 
-    sigemptyset(&set);
-    sigaddset(&set, SIGTSTP);
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGINT);
+    sigaddset(&mask, SIGQUIT);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGHUP);
+    sigaddset(&mask, SIGUSR1);
 
-    sa.sa_handler = signal_handler;
-    if ( sigaction(SIGINT, &sa, NULL) == -1 ) {
-        perror("Couldn't set SIGINT handler");
+    if(pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
+    {
+        perror("pthread_sigmask");
         exit(EXIT_FAILURE);
     }
 
-    if ( sigaction(SIGQUIT, &sa, NULL) == -1 ) {
-        perror("Couldn't set SIGINT handler");
+    struct sigaction s;
+    memset(&s, 0, sizeof(s));
+    s.sa_handler=SIG_IGN;
+
+    if(sigaction(SIGPIPE, &s, NULL) == -1 ){
+        perror("sigaction");
         exit(EXIT_FAILURE);
     }
 
 
-    if ( sigaction(SIGTERM, &sa, NULL) == -1 ) {
-        perror("Couldn't set SIGINT handler");
-        exit(EXIT_FAILURE);
-    }
-
-    if ( sigaction(SIGHUP, &sa, NULL) == -1 ) {
-        perror("Couldn't set SIGINT handler");
-        exit(EXIT_FAILURE);
-    }
-
-    sa.sa_handler = SIG_IGN;
-    if ( sigaction(SIGPIPE, &sa, NULL) == -1 ) {
-        perror("Couldn't set SIGINT handler");
-        exit(EXIT_FAILURE);
-    }
-
+    pthread_t signal_thread;
+    create(&signal_thread, NULL, thread_signal_handler, &mask);
 
 
     while ((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
@@ -122,10 +144,16 @@ int main (int argc, char **argv) {
     if (pid > 0) { //PADRE
         master_worker(argc, argv, dir_name, optind);
         waitpid(pid, NULL, 0);
+        pthread_cancel(signal_thread);
+        join(signal_thread, NULL);
 
     } else if (pid == 0) { //FIGLIO
         collector();
-
     }
+    else {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+
     return 0;
 }
