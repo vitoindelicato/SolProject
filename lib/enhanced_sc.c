@@ -102,8 +102,16 @@ size_t readn(int fd, void *ptr, size_t n) {
     nleft = n;
     while (nleft > 0) {
         if((nread = read(fd, ptr, nleft)) < 0) {
-            if (nleft == n) return -1; /* error, return -1 */
-            else break; /* error, return amount read so far */
+
+            if (nleft == n){  /* error, return -1 */
+                perror("Error while reading/n");
+                exit(EXIT_FAILURE);
+            }
+            else {
+                perror("Error while partial reading/n");
+                return (n - nleft); /* error, return amount read so far */
+            }
+
         } else if (nread == 0) break; /* EOF */
         nleft -= nread;
         ptr   += nread;
@@ -119,8 +127,14 @@ size_t writen(int fd, void *ptr, size_t n) {
     nleft = n;
     while (nleft > 0) {
         if((nwritten = write(fd, ptr, nleft)) < 0) {
-            if (nleft == n) return -1; /* error, return -1 */
-            else break; /* error, return amount written so far */
+            if (nleft == n){
+                perror("Error while writing/n");
+                exit(EXIT_FAILURE);  /* error, return -1 */
+            }
+            else {
+                perror("Error while partial writing/n");
+                return (n - nleft); /* error, return amount read so far */
+            }
         } else if (nwritten == 0) break;
         nleft -= nwritten;
         ptr   += nwritten;
