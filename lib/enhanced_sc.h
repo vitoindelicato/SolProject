@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <signal.h>
 
 
 
@@ -16,19 +17,22 @@ void cond_signal(pthread_cond_t *cond);
 void cond_broadcast(pthread_cond_t *cond);
 void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr);
 void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr);
-
 // static void cleanup_handler(void *arg);
-
 
 /* MEMORY ALLOCATION SYSTEM CALLS */
 void *Malloc(size_t size);
-
-
 
 /*   READ AND WRITES   */
 size_t readn(int fd, void *ptr, size_t n);
 size_t writen(int fd, void *ptr, size_t n);
 
+/*   SIGNALS   */
+int Sigwait(sigset_t *set, int *sig);
+void Sigemptyset(sigset_t *set);
+void Sigaddset(sigset_t *set, int signum);
 
+
+/* PROCESS */
+int Waitpid(pid_t pid, int *status, int options);
 
 
