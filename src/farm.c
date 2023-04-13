@@ -45,7 +45,7 @@ static void *thread_signal_handler(void *arg){
 
     while(1){
 
-        sigwait(set, &sig);
+        Sigwait(set, &sig);
 
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
@@ -65,9 +65,6 @@ static void *thread_signal_handler(void *arg){
     return NULL;
 }
 
-
-
-
 int main (int argc, char **argv) {
 
     int opt;
@@ -78,12 +75,12 @@ int main (int argc, char **argv) {
 
 
     sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGINT);
-    sigaddset(&mask, SIGQUIT);
-    sigaddset(&mask, SIGTERM);
-    sigaddset(&mask, SIGHUP);
-    sigaddset(&mask, SIGUSR1);
+    Sigemptyset(&mask);
+    Sigaddset(&mask, SIGINT);
+    Sigaddset(&mask, SIGQUIT);
+    Sigaddset(&mask, SIGTERM);
+    Sigaddset(&mask, SIGHUP);
+    Sigaddset(&mask, SIGUSR1);
 
     if(pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
     {
@@ -144,7 +141,7 @@ int main (int argc, char **argv) {
     if (pid > 0) { //PADRE
         //printf("PID: %d\n", getpid());
         master_worker(argc, argv, dir_name, optind);
-        waitpid(pid, NULL, 0);
+        Waitpid(pid, NULL, 0);
         pthread_cancel(signal_thread);
         join(signal_thread, NULL);
 

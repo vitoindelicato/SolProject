@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+
 /* THREAD FUNCTIONS SECTION */
 void lock(pthread_mutex_t *mutex){
     int err;
@@ -21,7 +24,6 @@ void unlock(pthread_mutex_t *mutex){
     }
 }
 
-
 void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args){
     int err;
     if((err = pthread_create(tid, attr, function, args)) != 0){
@@ -38,7 +40,6 @@ void join(pthread_t thread_id, void **retval){
     }
 }
 
-
 void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
     int err;
     if((err = pthread_cond_wait(cond, mutex)) != 0){
@@ -46,7 +47,6 @@ void cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex){
         exit(EXIT_FAILURE);
     }
 }
-
 
 void cond_broadcast(pthread_cond_t *cond){
     int err;
@@ -56,7 +56,6 @@ void cond_broadcast(pthread_cond_t *cond){
     }
 }
 
-
 void cond_signal(pthread_cond_t *cond){
     int err;
     if((err = pthread_cond_signal(cond)) != 0){
@@ -64,7 +63,6 @@ void cond_signal(pthread_cond_t *cond){
         exit(EXIT_FAILURE);
     }
 }
-
 
 void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
     int err;
@@ -74,7 +72,6 @@ void cond_init (pthread_cond_t * cnd, const pthread_condattr_t * attr){
     }
 }
 
-
 void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr){
     int err;
     if((err = pthread_mutex_init(mtx, attr)) != 0){
@@ -83,7 +80,7 @@ void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr){
     }
 }
 
-
+/* MEMORY ALLOCATION SECTION */
 void *Malloc(size_t size){
     void *ptr;
     if((ptr = malloc(size)) == NULL){
@@ -94,7 +91,7 @@ void *Malloc(size_t size){
 }
 
 
-
+/* READS AND WRITES */
 size_t readn(int fd, void *ptr, size_t n) {
     size_t   nleft;
     ssize_t  nread;
@@ -140,4 +137,43 @@ size_t writen(int fd, void *ptr, size_t n) {
         ptr   += nwritten;
     }
     return(n - nleft); /* return >= 0 */
+}
+
+
+/* SIGNALS */
+
+int Sigwait(sigset_t *set, int *sig){
+    int err;
+    if((err = sigwait(set, sig)) != 0){
+        perror("Error while waiting for signal");
+        exit(EXIT_FAILURE);
+    }
+    return err;
+}
+
+void Sigemptyset(sigset_t *set){
+    int err;
+    if((err = sigemptyset(set)) != 0){
+        perror("Error while emptying signal set");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void Sigaddset(sigset_t *set, int signum){
+    int err;
+    if((err = sigaddset(set, signum)) != 0){
+        perror("Error while adding signal to set");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
+/* PROCESS */
+int Waitpid(pid_t pid, int *status, int options){
+    int err;
+    if((err = waitpid(pid, status, options)) < 0){
+        perror("Error while waiting for process");
+        exit(EXIT_FAILURE);
+    }
+    return err;
 }
