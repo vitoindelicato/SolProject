@@ -47,7 +47,7 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
 
     for (int i = optind; i < argc; i++) {
         if(isRegular(argv[i])){
-            if(queue_interrupt == 1){
+            if(queue_interrupt == 2){
                 break;
             }
             enqueue(queue, argv[i]);
@@ -58,7 +58,10 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
 
     if (dir_name != NULL) {
         if (isDir(dir_name)) {
-            explorer(dir_name, queue);
+            if (queue_interrupt != 2) {
+                explorer(dir_name, queue);
+            }
+
             /* enqueue() is called recursively from explorer() */
         }
     }

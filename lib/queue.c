@@ -7,7 +7,7 @@
 
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
-extern volatile __sig_atomic_t queue_interrupt;
+extern int queue_interrupt;
 
 
 char *dequeue(_queue *queue){
@@ -36,6 +36,7 @@ void enqueue(_queue *queue, char *filename){
 
     if(queue_interrupt == 1){
         queue->done = 1;
+        queue_interrupt = 2;
         //printf("interrupted\n");
         unlock(&queue->q_lock);
         return;

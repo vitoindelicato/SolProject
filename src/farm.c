@@ -22,7 +22,8 @@
 
 pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
-volatile sig_atomic_t queue_interrupt = 0;
+
+
 
 
 struct sockaddr_un saddr;
@@ -31,11 +32,23 @@ int q_size = QUEUE_SIZE;
 int t_delay = TIME_DELAY;
 char *dir_name = NULL;
 int stop_thread = 0;
-
+int queue_interrupt = 0;
 
 
 static void signal_handler(int signum){
-    queue_interrupt = 1;
+    /* In order to skip useless acquire of queue's lock I'm setting queue_interrupt flag to have more values
+     * 0 - no signal has arrived yet
+     * 1 - signal arrived, I acquire the queue's lock, and set queue->done = 1, immediatly after I set queue_interrupt =2
+     * 2 - if queue_interrupt == 2 I can skip enqueue function and also explorer. */
+    if(queue_interrupt == 0){
+        queue_interrupt = 1;
+        printf("Queue is being closed, please wait thread to finish\n");
+    }
+
+    /* When these kinds of signals arrive, I do not permit any file to be inserted into queue anymore
+     * But still I have to wait every thread to empty queue, so after SIGINT program does not stop immediately*/
+
+    else return;
 }
 
 
@@ -56,7 +69,7 @@ static void *thread_signal_handler(void *arg){
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
-            printf("SIGINT, SIGQUIT, SIGTERM or SIGHUP received\n");
+            //printf("SIGINT, SIGQUIT, SIGTERM or SIGHUP received\n");
             signal_handler(sig);
             continue;
         }
