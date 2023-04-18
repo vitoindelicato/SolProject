@@ -7,6 +7,7 @@
 #include <string.h>
 #include "tools.h"
 
+extern int queue_interrupt;
 
 int isDir(char *path){
     struct stat info;
@@ -32,6 +33,7 @@ void explorer(char *dir_name, _queue *queue){
         struct dirent *file;
 
         while ( (file = readdir(dir)) != NULL && (errno == 0 ) ){
+            if (queue_interrupt == 2) return;
 
             if (strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0) {
                 continue;
