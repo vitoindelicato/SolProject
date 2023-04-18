@@ -24,7 +24,7 @@ exe	:
 	./main
 
 custom :
-	valgrind --track-origins=yes  --leak-check=full -s ./farm -q 3 -n 4 file*
+	valgrind --track-origins=yes  --leak-check=full -s ./farm -q 3 -n 4 file* -t 5000
 
 
 default :
