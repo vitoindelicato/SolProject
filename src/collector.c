@@ -46,9 +46,11 @@ _node *client_handler(int client_fd, int *stop, _node *head) {
     }
 
     if(strcmp(buffer, "PRINT") == 0) {
-        printf("Received PRINT\n");
+        //printf("Received PRINT\n");
         close(client_fd);
+        printf("\nPrinting after SIGUSR1 =============:\n");
         print_list(head);
+        printf("====================================\n\n");
         return NULL;
     }
 

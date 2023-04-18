@@ -82,6 +82,15 @@ int main (int argc, char **argv) {
 
     int opt;
 
+
+    /* Retrieving farm id in order to simplify sending of various signals */
+    int this_pid = getpid();
+    if(this_pid <  0 ){
+        perror("getpid");
+        exit(EXIT_FAILURE);
+    }
+    printf("PID: %d\n", getpid());
+
     saddr.sun_family = AF_UNIX;
     strcpy(saddr.sun_path, SOCKNAME);
 
