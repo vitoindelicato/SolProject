@@ -55,6 +55,7 @@ static void signal_handler(int signum){
 static void *thread_signal_handler(void *arg){
     int sig;
     sigset_t *set = (sigset_t*)arg;
+    int fd = connect_wrapper();
 
     while(1){
 
@@ -63,9 +64,9 @@ static void *thread_signal_handler(void *arg){
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
             //signal_handler(sig);
-            int fd = connect_wrapper();
+
             writen(fd, "PRINT", 5);
-            close(fd);
+            //close(fd);
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
