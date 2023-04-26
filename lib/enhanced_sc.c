@@ -32,6 +32,14 @@ void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void 
     }
 }
 
+void cancel(pthread_t tid){
+    int err;
+    if((err = pthread_cancel(tid)) != 0){
+        perror("Error while canceling thread");
+        exit(EXIT_FAILURE);
+    }
+}
+
 void join(pthread_t thread_id, void **retval){
     int err;
     if((err = pthread_join(thread_id, retval)) != 0){
@@ -125,7 +133,7 @@ size_t writen(int fd, void *ptr, size_t n) {
     while (nleft > 0) {
         if((nwritten = write(fd, ptr, nleft)) < 0) {
             if (nleft == n){
-                perror("Error while writing/n");
+                perror("Error while writing");
                 exit(EXIT_FAILURE);  /* error, return -1 */
             }
             else {

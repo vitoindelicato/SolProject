@@ -13,7 +13,6 @@
 #include <sys/wait.h>
 
 
-
 #define TD_POOL_SIZE  4
 #define QUEUE_SIZE 8
 #define TIME_DELAY 0
@@ -31,8 +30,10 @@ int n_threads = TD_POOL_SIZE;
 int q_size = QUEUE_SIZE;
 int t_delay = TIME_DELAY;
 char *dir_name = NULL;
-int stop_thread = 0;
 int queue_interrupt = 0;
+int stop_thread = 0;
+
+
 
 
 static void signal_handler(int signum){
@@ -57,16 +58,14 @@ static void *thread_signal_handler(void *arg){
     sigset_t *set = (sigset_t*)arg;
     int fd = connect_wrapper();
 
-    while(1){
+    while(stop_thread == 0){
 
         Sigwait(set, &sig);
 
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
             //signal_handler(sig);
-
             writen(fd, "PRINT", 5);
-            //close(fd);
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
@@ -76,26 +75,36 @@ static void *thread_signal_handler(void *arg){
         }
 
     }
+    close(fd);
     return NULL;
 }
 
+
+
+
+pthread_t signal_thread;
+
+void farm_clean() {
+    stop_thread = 1;
+    unlink(SOCKNAME);
+    //pthread_join(signal_thread,NULL);
+}
+
+
 int main (int argc, char **argv) {
+
+    printf("[FARM] PID: %d\n", getpid());
+
+    if (atexit(farm_clean) != 0 ){
+        perror("atexit");
+        exit(EXIT_FAILURE);
+    };
+
 
     int opt;
 
-
-    /* Retrieving farm id in order to simplify sending of various signals */
-    int this_pid = getpid();
-    if(this_pid <  0 ){
-        perror("getpid");
-        exit(EXIT_FAILURE);
-    }
-    printf("PID: %d\n", getpid());
-
     saddr.sun_family = AF_UNIX;
     strcpy(saddr.sun_path, SOCKNAME);
-
-
 
     sigset_t mask;
     Sigemptyset(&mask);
@@ -104,6 +113,7 @@ int main (int argc, char **argv) {
     Sigaddset(&mask, SIGTERM);
     Sigaddset(&mask, SIGHUP);
     Sigaddset(&mask, SIGUSR1);
+    //Sigaddset(&mask, SIGPIPE);
 
     if(pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
     {
@@ -120,9 +130,7 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-
-    pthread_t signal_thread;
-    create(&signal_thread, NULL, thread_signal_handler, &mask);
+    create(&signal_thread, NULL, thread_signal_handler, (void *) &mask);
 
 
     while ((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
@@ -162,19 +170,25 @@ int main (int argc, char **argv) {
     pid_t pid = fork();
 
     if (pid > 0) { //PADRE
-        //printf("PID: %d\n", getpid());
-        master_worker(argc, argv, dir_name, optind);
-        Waitpid(pid, NULL, 0);
-        pthread_cancel(signal_thread);
+        collector();
+        stop_thread = 1;
+        //cancel(signal_thread);
         join(signal_thread, NULL);
 
     } else if (pid == 0) { //FIGLIO
-        collector();
+        master_worker(argc, argv, dir_name);
+        Waitpid(pid, NULL, 0);
+       join(signal_thread, NULL);
+
+
     }
     else {
         perror("fork");
         exit(EXIT_FAILURE);
     }
 
+    stop_thread = 1;
+    join(signal_thread, NULL);
+    unlink(SOCKNAME);
     return 0;
 }

@@ -6,7 +6,7 @@
 /* THREADS SYSTEM CALLS */
 void lock(pthread_mutex_t *mutex);
 void unlock(pthread_mutex_t *mutex);
-void cancel(pthread_t *tid);
+void cancel(pthread_t tid);
 //static void cleanup(void* arg);
 
 void create(pthread_t *tid, const pthread_attr_t *attr, void* (*function) (void *), void *args);

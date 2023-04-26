@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "worker.h"
 #include "../lib/tools.h"
 #include "worker.h"
@@ -13,11 +14,9 @@ extern pthread_cond_t not_empty;
 extern volatile __sig_atomic_t queue_interrupt;
 
 
+void master_worker(int argc, char **argv, char *dir_name){
 
-
-
-
-void master_worker(int argc, char **argv, char *dir_name, int optind){
+    printf("[MASTER WORKER] PID: %d\n", getpid());
 
 
 
@@ -74,17 +73,16 @@ void master_worker(int argc, char **argv, char *dir_name, int optind){
      * I need to send a not_empty signal in order to free all threads that where waiting
      * in (isEmpty && done == 0*/
 
-    cond_broadcast(&not_empty);
+    cond_signal(&not_empty);
     unlock(&queue->q_lock);
+
 
     for (int i = 0; i < n_threads; i++) {
         join(threadpool[i], NULL);
     }
 
-    int fd = connect_wrapper();
-    writen(fd, "DONE", 5);
-    close(fd);
-
     free(queue->items);
     free(queue);
+    printf("Master worker exiting\n");
+    exit(EXIT_SUCCESS);
 }

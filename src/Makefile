@@ -12,7 +12,7 @@ node = $(LIBS)/node*
 
 # Do not pay attention to custom and default, they are just for local testing purposes
 
-.PHONY: default custom clean
+.PHONY: default custom clean unlink test default_d custom_d
 
 farm	: farm.c $(master_worker) $(collector) $(tools) $(queue) $(threads) $(system_calls) $(node)
 	$(CC) $(CFLAGS) $^ -o $@
@@ -24,11 +24,18 @@ exe	:
 	./main
 
 custom :
-	valgrind --track-origins=yes  --leak-check=full -s ./farm -q 3 -n 4 file* -t 5000
+	valgrind --track-origins=yes  --leak-check=full --show-leak-kinds=all -s ./farm -q 1 -n 2 file* -t 5000
+
+custom_d :
+	valgrind --track-origins=yes  --leak-check=full --show-leak-kinds=all -s ./farm -q 2 -n 4 file* -t 5000 -d testdir
+
 
 
 default :
 	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -t 5000
+
+default_d :
+	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -t 5000 -d testdir
 
 test:
 	make
@@ -38,3 +45,6 @@ clean :
 	rm -r testdir
 	rm file*
 	rm expected.txt
+
+unlink :
+	rm *.sck

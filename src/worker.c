@@ -52,11 +52,16 @@ int connect_wrapper(){
     }
     int ret_val;
     while(( ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1) ){
-        if (errno == ENOENT){
+        if (errno == ENOENT || errno == ECONNREFUSED){
             printf("[CLIENT]:\tSocket not found, retrying...\n");
             sleep(2);
         }
-        else exit(EXIT_FAILURE);
+
+        else {
+            printf("[CLIENT]:\tConnection to server failed: %d\n", errno);
+            perror("Connection to server failed:");
+            exit(EXIT_FAILURE);
+        }
     }
 
     //printf("Created client socket with fd: %d\n", fd);

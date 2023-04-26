@@ -79,7 +79,7 @@ int create_server_socket(struct sockaddr_un *saddr) {
     if (ret_val != 0) {
         fprintf(stderr, "bind failed [%s]\n", strerror(errno));
         close(fd);
-        return -1;
+        return -2;
     }
 
     /* Step3: listen for incoming connections */
@@ -93,9 +93,21 @@ int create_server_socket(struct sockaddr_un *saddr) {
 
 }
 
+
 void collector() {
     /* Collector is the server which handle requests from client.
      * client send data and the server operate to sort them in a linked list. */
+
+    printf("[COLLECTOR SERVER] PID: %d\n", getpid());
+
+    int server_fd;
+    int events_count;
+    int epoll_fd;
+
+    char buffer[PATH_MAX] = {'\0'};
+    int  n;
+    _node *head = NULL;
+
 
     struct sockaddr_un new_addr;
     new_addr.sun_family = AF_UNIX;
@@ -103,20 +115,31 @@ void collector() {
 
     struct epoll_event event, events[n_threads+1]; // +1 perchè mi connetto una sola volta dalla farm per mandare il messaggio di print
 
-    int server_fd;
-    int events_count;
-    char buffer[PATH_MAX] = {'\0'};
-    int  n;
+
 
     /* Get the socket server fd */
     server_fd = create_server_socket(&new_addr); //socket --> bind --> listen
     if (server_fd == -1) {
-        fprintf(stderr, "Failed to create a server\n");
-        return;
+        perror("Failed to create a server\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(server_fd == -2){
+        unlink(SOCKNAME);
+        //printf("Retrying to create server socket...\n");
+        server_fd = create_server_socket(&new_addr);
+        if (server_fd == -1 || server_fd == -2) {
+            perror("Failed to create a server\n");
+            exit(EXIT_FAILURE);
+        }
+        /*
+        else{
+            printf("Server socket created successfully!\n");
+        }*/
     }
 
     // Creazione epoll file_descriptor
-    int epoll_fd;
+
     if ((epoll_fd = epoll_create(1)) == -1) {
         perror("Errore nella creazione del nuovo epoll file descriptor");
         exit(EXIT_FAILURE);
@@ -132,9 +155,10 @@ void collector() {
     }
 
     int stop = 0;
-    _node *head = NULL;
+
 
     while(stop < n_threads){ /*Esco dal ciclo quando tutti i threads hanno inviato messaggio DONE*/
+
 
         events_count = epoll_wait(epoll_fd, events, MAX_CONNECTIONS, -1);
         for (int i = 0; i < events_count; i++){
@@ -175,6 +199,7 @@ void collector() {
                         perror("Errore nella rimozione del client_fd dall'epoll set");
                         exit(EXIT_FAILURE);
                     }
+                    memset(buffer, 0, sizeof(buffer));
                 }
                 else if(n > 0){
                     /*Il client ha inviato qualcosa*/
@@ -183,10 +208,12 @@ void collector() {
                         printf("\nPrinting after SIGUSR1 =============:\n");
                         print_list(head);
                         printf("====================================\n\n");
+                        memset(buffer, 0, sizeof(buffer));
                         continue;
                     }
                     if(strcmp(buffer, "DONE") == 0) {
                         /*Il thread ha finito, rimuovo il suo file descriptor*/
+                        memset(buffer, 0, sizeof(buffer));
                         if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &event) == -1){
                             perror("Errore nella rimozione del client_fd dall'epoll set");
                             exit(EXIT_FAILURE);
@@ -196,6 +223,7 @@ void collector() {
                     else{
                         _node *new_node = node_builder(buffer);
                         insert_node(&head, new_node);
+                        memset(buffer, 0, sizeof(buffer));
                     }
                 }
                 else{
@@ -203,9 +231,15 @@ void collector() {
                     exit(EXIT_FAILURE);
                 }
             }
+            memset(buffer, 0, sizeof(buffer));
         }
     }
     print_list(head);
     free_list(&head);
+    close(server_fd);
+    close(epoll_fd);
     unlink(SOCKNAME);
+    exit(0);
+
+
 }
