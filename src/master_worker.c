@@ -11,7 +11,7 @@ extern int n_threads;
 extern int t_delay;
 
 extern pthread_cond_t not_empty;
-extern volatile __sig_atomic_t queue_interrupt;
+extern int queue_interrupt;
 
 
 void master_worker(int argc, char **argv, char *dir_name){
@@ -52,7 +52,6 @@ void master_worker(int argc, char **argv, char *dir_name){
             enqueue(queue, argv[i]);
         }
     }
-
 
 
     if (dir_name != NULL) {

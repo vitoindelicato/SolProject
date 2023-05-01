@@ -20,8 +20,6 @@ farm	: farm.c $(master_worker) $(collector) $(tools) $(queue) $(threads) $(syste
 generafile : generafile.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-exe	:
-	./main
 
 custom :
 	valgrind --track-origins=yes  --leak-check=full --show-leak-kinds=all -s ./farm -q 1 -n 2 file* -t 5000
@@ -32,7 +30,7 @@ custom_d :
 
 
 default :
-	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -t 5000
+	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file*
 
 default_d :
 	valgrind --track-origins=yes   --leak-check=full --show-leak-kinds=all -s ./farm file* -t 5000 -d testdir

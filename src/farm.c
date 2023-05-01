@@ -58,7 +58,7 @@ static void *thread_signal_handler(void *arg){
     sigset_t *set = (sigset_t*)arg;
     int fd = connect_wrapper();
 
-    while(stop_thread == 0){
+    while(1){
 
         Sigwait(set, &sig);
 
@@ -73,6 +73,14 @@ static void *thread_signal_handler(void *arg){
             signal_handler(sig);
             continue;
         }
+        else if(sig == SIGUSR2){
+            break;
+
+        }
+        else{
+            printf("Unknown signal received\n");
+            continue;
+        }
 
     }
     close(fd);
@@ -82,7 +90,6 @@ static void *thread_signal_handler(void *arg){
 
 
 
-pthread_t signal_thread;
 
 void farm_clean() {
     stop_thread = 1;
@@ -113,6 +120,7 @@ int main (int argc, char **argv) {
     Sigaddset(&mask, SIGTERM);
     Sigaddset(&mask, SIGHUP);
     Sigaddset(&mask, SIGUSR1);
+    Sigaddset(&mask, SIGUSR2);
     //Sigaddset(&mask, SIGPIPE);
 
     if(pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
@@ -130,6 +138,7 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+    pthread_t signal_thread;
     create(&signal_thread, NULL, thread_signal_handler, (void *) &mask);
 
 
@@ -171,23 +180,20 @@ int main (int argc, char **argv) {
 
     if (pid > 0) { //PADRE
         collector();
-        stop_thread = 1;
-        //cancel(signal_thread);
-        join(signal_thread, NULL);
-
-    } else if (pid == 0) { //FIGLIO
-        master_worker(argc, argv, dir_name);
         Waitpid(pid, NULL, 0);
-       join(signal_thread, NULL);
-
+        pthread_kill(signal_thread, SIGUSR2);
+    }
+    else if (pid == 0) { //FIGLIO
+        master_worker(argc, argv, dir_name);
 
     }
+
     else {
         perror("fork");
         exit(EXIT_FAILURE);
     }
 
-    stop_thread = 1;
+    //pthread_kill(signal_thread, SIGUSR2);
     join(signal_thread, NULL);
     unlink(SOCKNAME);
     return 0;
