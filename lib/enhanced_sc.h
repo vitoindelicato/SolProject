@@ -1,3 +1,6 @@
+#ifndef ENHANCED_SC_H
+#define ENHANCED_SC_H
+
 #include <pthread.h>
 #include <signal.h>
 
@@ -34,5 +37,7 @@ void Sigaddset(sigset_t *set, int signum);
 
 /* PROCESS */
 int Waitpid(pid_t pid, int *status, int options);
+
+#endif
 
 

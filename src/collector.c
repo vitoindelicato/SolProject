@@ -113,7 +113,7 @@ void collector() {
     new_addr.sun_family = AF_UNIX;
     strcpy(new_addr.sun_path, SOCKNAME);
 
-    struct epoll_event event, events[n_threads+1]; // +1 perchè mi connetto una sola volta dalla farm per mandare il messaggio di print
+    struct epoll_event event, events[n_threads]; // +2 rappresenting farm connection (for SIGUSR1) and master_worker connection (DONE message)
 
 
 

@@ -73,6 +73,7 @@ static void *thread_signal_handler(void *arg){
             signal_handler(sig);
             continue;
         }
+
         else if(sig == SIGUSR2){
             break;
 
@@ -87,10 +88,6 @@ static void *thread_signal_handler(void *arg){
     return NULL;
 }
 
-
-
-
-
 void farm_clean() {
     stop_thread = 1;
     unlink(SOCKNAME);
@@ -99,6 +96,7 @@ void farm_clean() {
 
 
 int main (int argc, char **argv) {
+    //TODO: 'https://stackoverflow.com/questions/4584904/what-causes-the-broken-pipe-error' EPIPE error
 
     printf("[FARM] PID: %d\n", getpid());
 
@@ -139,7 +137,8 @@ int main (int argc, char **argv) {
     }
 
     pthread_t signal_thread;
-    create(&signal_thread, NULL, thread_signal_handler, (void *) &mask);
+    create(&signal_thread, NULL, thread_signal_handler, &mask);
+
 
 
     while ((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
@@ -179,22 +178,22 @@ int main (int argc, char **argv) {
     pid_t pid = fork();
 
     if (pid > 0) { //PADRE
-        collector();
+        //printf("PID: %d\n", getpid());
+        master_worker(argc, argv, dir_name);
         Waitpid(pid, NULL, 0);
         pthread_kill(signal_thread, SIGUSR2);
+        join(signal_thread, NULL);
+        cancel(signal_thread);
+
     }
     else if (pid == 0) { //FIGLIO
-        master_worker(argc, argv, dir_name);
-
+        collector();
     }
-
     else {
         perror("fork");
         exit(EXIT_FAILURE);
     }
 
-    //pthread_kill(signal_thread, SIGUSR2);
-    join(signal_thread, NULL);
     unlink(SOCKNAME);
     return 0;
 }
