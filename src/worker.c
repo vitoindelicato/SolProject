@@ -88,7 +88,6 @@ void *worker_function(void *args){
         while(isEmpty(queue)){
             if(queue->done == 1){
                 unlock(&queue->q_lock);
-                writen(fd, "DONE", 5);
                 close(fd);
                 return (void*) 0;
             }
@@ -100,9 +99,7 @@ void *worker_function(void *args){
              * No more things to do.
              * Thread send done message to server before exiting.
              */
-            //fd = connect_wrapper();
-            writen(fd, "DONE", 5);
-            //close(fd);
+
             unlock(&queue->q_lock);
             close(fd);
             return (void*) 0;
@@ -119,16 +116,11 @@ void *worker_function(void *args){
         strncat(buffer, ";", 2);
         strncat(buffer, filename, strlen(filename));
 
-        //printf("%s\n", buffer);
 
-        //fd = connect_wrapper();
-        //printf("Created client socket with fd: %d\n", fd);
-        //printf("\033[1;34m[Thread]:\033[0m %ld \n\t [file]: %s \t [result]: %lld\n", pthread_self(), node.filename, node.result);
         writen(fd, buffer, strlen(buffer));
-        //close(fd);
+
         free(filename);
         free(buffer);
-        //printf("sleeping for %d ms\n", t_delay);
         sleep(t_delay * 0.001);
     }
 

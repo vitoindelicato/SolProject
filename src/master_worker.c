@@ -80,6 +80,11 @@ void master_worker(int argc, char **argv, char *dir_name){
         join(threadpool[i], NULL);
     }
 
+    /*Once all workers returned, i can send a message to the server and then close it*/
+    int fd = connect_wrapper();
+    writen(fd, "DONE", 5);
+    close(fd);
+
     free(queue->items);
     free(queue);
     printf("Master worker exiting\n");

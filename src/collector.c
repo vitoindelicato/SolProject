@@ -157,7 +157,7 @@ void collector() {
     int stop = 0;
 
 
-    while(stop < n_threads){ /*Esco dal ciclo quando tutti i threads hanno inviato messaggio DONE*/
+    while(stop == 0){ /* Exiting while after master worker sends "DONE" message */
 
 
         events_count = epoll_wait(epoll_fd, events, MAX_CONNECTIONS, -1);
@@ -212,13 +212,15 @@ void collector() {
                         continue;
                     }
                     if(strcmp(buffer, "DONE") == 0) {
-                        /*Il thread ha finito, rimuovo il suo file descriptor*/
+                        /*All threads returned, master worker sent last message, we're done, i can close the server*/
                         memset(buffer, 0, sizeof(buffer));
+
                         if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &event) == -1){
                             perror("Errore nella rimozione del client_fd dall'epoll set");
                             exit(EXIT_FAILURE);
                         }
                         stop++;
+                        continue;
                     }
                     else{
                         _node *new_node = node_builder(buffer);
