@@ -78,9 +78,15 @@ static void *thread_signal_handler(void *arg){
     return NULL;
 }
 
+void exit_handler(){
+    unlink(SOCKNAME);
+}
+
 int main (int argc, char **argv) {
 
     int opt;
+
+    atexit(exit_handler);
 
 
     /* Retrieving farm id in order to simplify sending of various signals */

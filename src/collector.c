@@ -92,9 +92,15 @@ int create_server_socket(struct sockaddr_un *saddr) {
 
 }
 
+void collector_exit(){
+    unlink(SOCKNAME);
+}
+
 void collector() {
     /* Collector is the server which handle requests from client.
      * client send data and the server operate to sort them in a linked list. */
+
+    atexit(collector_exit);
 
     struct sockaddr_un new_addr;
     new_addr.sun_family = AF_UNIX;
@@ -111,7 +117,7 @@ void collector() {
 
     int stop = 0;
     _node *head = NULL;
-
+    
     while(stop == 0){
 
         int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);

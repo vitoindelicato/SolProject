@@ -10,7 +10,7 @@ extern int n_threads;
 extern int t_delay;
 
 extern pthread_cond_t not_empty;
-extern volatile __sig_atomic_t queue_interrupt;
+extern int queue_interrupt;
 
 
 
