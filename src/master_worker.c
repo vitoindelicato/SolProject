@@ -88,5 +88,4 @@ void master_worker(int argc, char **argv, char *dir_name){
     free(queue->items);
     free(queue);
     printf("Master worker exiting\n");
-    exit(EXIT_SUCCESS);
 }

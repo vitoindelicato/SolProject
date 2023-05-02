@@ -240,8 +240,5 @@ void collector() {
     free_list(&head);
     close(server_fd);
     close(epoll_fd);
-    unlink(SOCKNAME);
-    exit(0);
-
-
+    //unlink(SOCKNAME);
 }
