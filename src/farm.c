@@ -4,14 +4,13 @@
 #include <unistd.h>
 #include <signal.h>
 #include "../lib/tools.h"
-#include "../lib/enhanced_sc.h"
+//#include "../lib/enhanced_sc.h"
 #include "master_worker.h"
 #include "collector.h"
 #include "worker.h" // I really don't like this import, but I'm running out of time :/
 #include <sys/un.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
-
+//#include <sys/wait.h>
 
 
 #define TD_POOL_SIZE  4
@@ -31,8 +30,10 @@ int n_threads = TD_POOL_SIZE;
 int q_size = QUEUE_SIZE;
 int t_delay = TIME_DELAY;
 char *dir_name = NULL;
-int stop_thread = 0;
 int queue_interrupt = 0;
+int stop_thread = 0;
+
+
 
 
 static void signal_handler(int signum){
@@ -55,6 +56,7 @@ static void signal_handler(int signum){
 static void *thread_signal_handler(void *arg){
     int sig;
     sigset_t *set = (sigset_t*)arg;
+    int fd = connect_wrapper();
 
     while(1){
 
@@ -62,39 +64,50 @@ static void *thread_signal_handler(void *arg){
 
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
-            //signal_handler(sig);
-            int fd = connect_wrapper();
             writen(fd, "PRINT", 5);
-            close(fd);
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
-            //printf("SIGINT, SIGQUIT, SIGTERM or SIGHUP received\n");
             signal_handler(sig);
             continue;
         }
 
+        else if(sig == SIGUSR2){
+            break;
+
+        }
+        else{
+            printf("Unknown signal received\n");
+            continue;
+        }
+
     }
+    close(fd);
     return NULL;
 }
 
+void farm_clean() {
+    stop_thread = 1;
+    unlink(SOCKNAME);
+    //pthread_join(signal_thread,NULL);
+}
+
+
 int main (int argc, char **argv) {
+    //TODO: 'https://stackoverflow.com/questions/4584904/what-causes-the-broken-pipe-error' EPIPE error
+
+    printf("[FARM] PID: %d\n", getpid());
+
+    if (atexit(farm_clean) != 0 ){
+        perror("atexit");
+        exit(EXIT_FAILURE);
+    };
+
 
     int opt;
 
-
-    /* Retrieving farm id in order to simplify sending of various signals */
-    int this_pid = getpid();
-    if(this_pid <  0 ){
-        perror("getpid");
-        exit(EXIT_FAILURE);
-    }
-    printf("PID: %d\n", getpid());
-
     saddr.sun_family = AF_UNIX;
     strcpy(saddr.sun_path, SOCKNAME);
-
-
 
     sigset_t mask;
     Sigemptyset(&mask);
@@ -103,6 +116,8 @@ int main (int argc, char **argv) {
     Sigaddset(&mask, SIGTERM);
     Sigaddset(&mask, SIGHUP);
     Sigaddset(&mask, SIGUSR1);
+    Sigaddset(&mask, SIGUSR2);
+    //Sigaddset(&mask, SIGPIPE);
 
     if(pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
     {
@@ -119,9 +134,9 @@ int main (int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-
     pthread_t signal_thread;
     create(&signal_thread, NULL, thread_signal_handler, &mask);
+
 
 
     while ((opt = getopt(argc, argv, "n:q:d:t:")) != -1) {
@@ -162,18 +177,23 @@ int main (int argc, char **argv) {
 
     if (pid > 0) { //PADRE
         //printf("PID: %d\n", getpid());
-        master_worker(argc, argv, dir_name, optind);
-        Waitpid(pid, NULL, 0);
-        pthread_cancel(signal_thread);
-        join(signal_thread, NULL);
+        master_worker(argc, argv, dir_name);
 
-    } else if (pid == 0) { //FIGLIO
+        Waitpid(pid, NULL, 0);
+        pthread_kill(signal_thread, SIGUSR2);
+        join(signal_thread, NULL);
+        cancel(signal_thread);
+
+    }
+    else if (pid == 0) { //FIGLIO
         collector();
+
     }
     else {
         perror("fork");
         exit(EXIT_FAILURE);
     }
 
+    unlink(SOCKNAME);
     return 0;
 }
