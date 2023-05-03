@@ -4,13 +4,13 @@
 #include <unistd.h>
 #include <signal.h>
 #include "../lib/tools.h"
-#include "../lib/enhanced_sc.h"
+//#include "../lib/enhanced_sc.h"
 #include "master_worker.h"
 #include "collector.h"
 #include "worker.h" // I really don't like this import, but I'm running out of time :/
 #include <sys/un.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
+//#include <sys/wait.h>
 
 
 #define TD_POOL_SIZE  4
@@ -64,12 +64,10 @@ static void *thread_signal_handler(void *arg){
 
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
-            //signal_handler(sig);
             writen(fd, "PRINT", 5);
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
-            //printf("SIGINT, SIGQUIT, SIGTERM or SIGHUP received\n");
             signal_handler(sig);
             continue;
         }
@@ -180,6 +178,7 @@ int main (int argc, char **argv) {
     if (pid > 0) { //PADRE
         //printf("PID: %d\n", getpid());
         master_worker(argc, argv, dir_name);
+
         Waitpid(pid, NULL, 0);
         pthread_kill(signal_thread, SIGUSR2);
         join(signal_thread, NULL);
@@ -188,6 +187,7 @@ int main (int argc, char **argv) {
     }
     else if (pid == 0) { //FIGLIO
         collector();
+
     }
     else {
         perror("fork");
