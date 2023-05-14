@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/un.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <math.h>
 #include "../lib/queue.h"
@@ -70,7 +71,7 @@ void *worker_function(void *args){
         if(isEmpty(queue) && queue->done == 1){
             /*
              * No more things to do.
-             * Thread send done message to server before exiting.
+             * Unlocking resources and exiting.
              */
 
             unlock(&queue->q_lock);
@@ -88,9 +89,13 @@ void *worker_function(void *args){
         snprintf(buffer, digits+1, "%ld", result);
         strncat(buffer, ";", 2);
         strncat(buffer, filename, strlen(filename));
+        strncat(buffer, "\0", 2);
 
-
-        writen(fd, buffer, strlen(buffer));
+        int sent_bytes = write(fd, buffer, strlen(buffer));
+        if (sent_bytes == -1){
+            perror("Error on write");
+            return (void*) 0;
+        }
 
         free(filename);
         free(buffer);

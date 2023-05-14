@@ -20,10 +20,7 @@ extern struct sockaddr_un client_addr;
 
 
 void master_worker(int argc, char **argv, char *dir_name) {
-
-    printf("[MASTER WORKER] PID: %d\n", getpid());
-
-
+    
 /* Queue init */
 
     _queue *queue = Malloc(sizeof(_queue));
@@ -86,10 +83,16 @@ void master_worker(int argc, char **argv, char *dir_name) {
 
     /*Once all workers returned, I can send a message to the server and then close it*/
     int fd = client_connection(&client_addr);
-    writen(fd, "DONE", 5);
+    ssize_t sent_bytes = write(fd, "DONE", 4);
+
+    if (sent_bytes == -1){
+        perror("Error on writing");
+        free(queue->items);
+        free(queue);
+        return;
+    }
     close(fd);
 
     free(queue->items);
     free(queue);
-    printf("Master worker exiting\n");
 }
