@@ -25,10 +25,6 @@ void mtx_init (pthread_mutex_t * mtx, const pthread_mutexattr_t * attr);
 /* MEMORY ALLOCATION SYSTEM CALLS */
 void *Malloc(size_t size);
 
-/*   READ AND WRITES   */
-size_t readn(int fd, void *ptr, size_t n);
-size_t writen(int fd, void *ptr, size_t n);
-
 /*   SIGNALS   */
 int Sigwait(sigset_t *set, int *sig);
 void Sigemptyset(sigset_t *set);
