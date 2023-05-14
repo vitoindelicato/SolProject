@@ -59,7 +59,12 @@ static void *thread_signal_handler(void *arg){
 
         if(sig == SIGUSR1){
             printf("SIGUSR1 received\n");
-            writen(fd, "PRINT", 5);
+            ssize_t sent_bytes = write(fd, "PRINT", 5);
+
+            if (sent_bytes == -1){
+                perror("Error on writing");
+                return NULL;
+            }
             continue;
         }
         else if(sig == SIGINT || sig == SIGQUIT || sig == SIGTERM || sig == SIGHUP){
@@ -89,8 +94,6 @@ void farm_clean() {
 
 int main (int argc, char **argv) {
     //TODO: 'https://stackoverflow.com/questions/4584904/what-causes-the-broken-pipe-error' EPIPE error
-
-    printf("[FARM] PID: %d\n", getpid());
 
     if (atexit(farm_clean) != 0 ){
         perror("atexit");
