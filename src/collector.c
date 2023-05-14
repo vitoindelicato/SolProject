@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <sys/epoll.h>
 #include "../lib/node.h"
+#include "../lib/socket_utils.h"
 
 #define SOCKNAME "farm.sck"
 #define MAX_CONNECTIONS 100
@@ -63,35 +64,6 @@ _node *client_handler(int client_fd, int *stop, _node *head) {
 
 
 
-int create_server_socket(struct sockaddr_un *saddr) {
-    int fd, ret_val;
-
-    /* Step1: create server socket */
-    fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-    if (fd == -1) {
-        fprintf(stderr, "socket failed [%s]\n", strerror(errno));
-        return -1;
-    }
-
-    /* Step2: bind the socket */
-    ret_val = bind(fd, (struct sockaddr *)saddr, sizeof(struct sockaddr_un));
-    if (ret_val != 0) {
-        fprintf(stderr, "bind failed [%s]\n", strerror(errno));
-        close(fd);
-        return -2;
-    }
-
-    /* Step3: listen for incoming connections */
-    ret_val = listen(fd, MAX_CONNECTIONS);
-    if (ret_val != 0) {
-        fprintf(stderr, "listen failed [%s]\n", strerror(errno));
-        close(fd);
-        return -1;
-    }
-    return fd;
-
-}
 
 
 void collector() {
@@ -108,17 +80,17 @@ void collector() {
     int  n;
     _node *head = NULL;
 
+    struct sockaddr_un server_addr;
 
-    struct sockaddr_un new_addr;
-    new_addr.sun_family = AF_UNIX;
-    strcpy(new_addr.sun_path, SOCKNAME);
+    server_addr.sun_family = AF_UNIX;
+    strcpy(server_addr.sun_path, SOCKNAME);
 
     struct epoll_event event, events[n_threads]; // +2 rappresenting farm connection (for SIGUSR1) and master_worker connection (DONE message)
 
 
 
     /* Get the socket server fd */
-    server_fd = create_server_socket(&new_addr); //socket --> bind --> listen
+    server_fd = create_server_socket(&server_addr); //socket --> bind --> listen
     if (server_fd == -1) {
         perror("Failed to create a server\n");
         exit(EXIT_FAILURE);
@@ -127,7 +99,7 @@ void collector() {
     if(server_fd == -2){
         unlink(SOCKNAME);
         //printf("Retrying to create server socket...\n");
-        server_fd = create_server_socket(&new_addr);
+        server_fd = create_server_socket(&server_addr);
         if (server_fd == -1 || server_fd == -2) {
             perror("Failed to create a server\n");
             exit(EXIT_FAILURE);
@@ -167,7 +139,7 @@ void collector() {
                 /*Se ho un evento sul file descriptor del server
                  * allora significa che ho una nuova connessione in entrata*/
 
-                int new_client = accept(server_fd, (struct sockaddr *) &new_addr, &addrlen);
+                int new_client = accept(server_fd, (struct sockaddr *) &server_addr, &addrlen);
 
                 if (new_client == -1) {
                     if (errno == EINTR) {
@@ -240,5 +212,4 @@ void collector() {
     free_list(&head);
     close(server_fd);
     close(epoll_fd);
-    //unlink(SOCKNAME);
 }

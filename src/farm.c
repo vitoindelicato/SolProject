@@ -4,13 +4,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include "../lib/tools.h"
-//#include "../lib/enhanced_sc.h"
 #include "master_worker.h"
 #include "collector.h"
-#include "worker.h" // I really don't like this import, but I'm running out of time :/
+#include "../lib/socket_utils.h"
 #include <sys/un.h>
 #include <sys/socket.h>
-//#include <sys/wait.h>
 
 
 #define TD_POOL_SIZE  4
@@ -23,16 +21,13 @@ pthread_cond_t not_empty = PTHREAD_COND_INITIALIZER;
 pthread_cond_t not_full = PTHREAD_COND_INITIALIZER;
 
 
-
-
-struct sockaddr_un saddr;
 int n_threads = TD_POOL_SIZE;
 int q_size = QUEUE_SIZE;
 int t_delay = TIME_DELAY;
 char *dir_name = NULL;
 int queue_interrupt = 0;
-int stop_thread = 0;
 
+struct sockaddr_un client_addr;
 
 
 
@@ -56,7 +51,7 @@ static void signal_handler(int signum){
 static void *thread_signal_handler(void *arg){
     int sig;
     sigset_t *set = (sigset_t*)arg;
-    int fd = connect_wrapper();
+    int fd = client_connection(&client_addr);
 
     while(1){
 
@@ -87,7 +82,6 @@ static void *thread_signal_handler(void *arg){
 }
 
 void farm_clean() {
-    stop_thread = 1;
     unlink(SOCKNAME);
     //pthread_join(signal_thread,NULL);
 }
@@ -106,8 +100,9 @@ int main (int argc, char **argv) {
 
     int opt;
 
-    saddr.sun_family = AF_UNIX;
-    strcpy(saddr.sun_path, SOCKNAME);
+
+    client_addr.sun_family = AF_UNIX;
+    strncpy(client_addr.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
 
     sigset_t mask;
     Sigemptyset(&mask);
@@ -180,7 +175,10 @@ int main (int argc, char **argv) {
         master_worker(argc, argv, dir_name);
 
         Waitpid(pid, NULL, 0);
+        //once that every thread has finished, thread to monitor signals can be cancelled
+        //I send SIGUSR2 in order to break while(1) loop
         pthread_kill(signal_thread, SIGUSR2);
+
         join(signal_thread, NULL);
         cancel(signal_thread);
 

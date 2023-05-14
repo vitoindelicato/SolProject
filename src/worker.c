@@ -2,20 +2,18 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/un.h>
-#include <errno.h>
 #include <unistd.h>
 #include <math.h>
 #include "../lib/queue.h"
-#include "../lib/enhanced_sc.h"
+#include "../lib/socket_utils.h"
 
 
 extern pthread_cond_t not_empty;
 extern pthread_cond_t not_full;
-extern struct sockaddr_un *saddr;
 extern int t_delay;
 
+extern struct sockaddr_un client_addr;
 
 long calculator(char *filename){
 
@@ -44,30 +42,6 @@ long calculator(char *filename){
 }
 
 
-int connect_wrapper(){
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (fd == -1) {
-        fprintf(stderr, "socket failed [%s]\n", strerror(errno));
-        return -1;
-    }
-    int ret_val;
-    while(( ret_val = connect(fd, (struct sockaddr*) &saddr, sizeof(struct sockaddr_un)) == -1) ){
-        if (errno == ENOENT){
-            printf("[CLIENT]:\tSocket not found, retrying...\n");
-            sleep(2);
-        }
-        else {
-            printf("[CLIENT]:\tConnection to server failed: %d\n", errno);
-            perror("Connection to server failed:");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    //printf("Created client socket with fd: %d\n", fd);
-    return fd;
-}
-
-
 void *worker_function(void *args){
 
     /* Here I will write the thread function
@@ -78,7 +52,7 @@ void *worker_function(void *args){
     _queue *queue = (_queue *) args;
     char *filename;
     long int result;
-    int fd = connect_wrapper();
+    int fd = client_connection(&client_addr);
 
     while(1){
         lock(&queue->q_lock);
@@ -122,7 +96,6 @@ void *worker_function(void *args){
         free(buffer);
         sleep(t_delay * 0.001);
     }
-
 }
 
 

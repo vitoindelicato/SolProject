@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include "worker.h"
 #include "../lib/tools.h"
-#include "worker.h"
+#include "../lib/socket_utils.h"
+#include <sys/socket.h>
+
+#define SOCKNAME "farm.sck"
 
 
 extern int q_size;
@@ -13,11 +16,12 @@ extern int t_delay;
 extern pthread_cond_t not_empty;
 extern int queue_interrupt;
 
+extern struct sockaddr_un client_addr;
 
-void master_worker(int argc, char **argv, char *dir_name){
+
+void master_worker(int argc, char **argv, char *dir_name) {
 
     printf("[MASTER WORKER] PID: %d\n", getpid());
-
 
 
 /* Queue init */
@@ -80,8 +84,8 @@ void master_worker(int argc, char **argv, char *dir_name){
         join(threadpool[i], NULL);
     }
 
-    /*Once all workers returned, i can send a message to the server and then close it*/
-    int fd = connect_wrapper();
+    /*Once all workers returned, I can send a message to the server and then close it*/
+    int fd = client_connection(&client_addr);
     writen(fd, "DONE", 5);
     close(fd);
 

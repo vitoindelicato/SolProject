@@ -9,12 +9,13 @@ system_calls = $(LIBS)/enhanced_sc*
 collector = collector*
 master_worker = master_worker*
 node = $(LIBS)/node*
+socket = $(LIBS)/socket*
 
 # Do not pay attention to custom and default, they are just for local testing purposes
 
 .PHONY: default custom clean unlink test default_d custom_d
 
-farm	: farm.c $(master_worker) $(collector) $(tools) $(queue) $(threads) $(system_calls) $(node)
+farm	: farm.c $(master_worker) $(collector) $(tools) $(queue) $(threads) $(system_calls) $(node) $(socket)
 	$(CC) $(CFLAGS) $^ -o $@
 
 generafile : generafile.c
