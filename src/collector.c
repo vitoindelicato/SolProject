@@ -70,8 +70,6 @@ void collector() {
     /* Collector is the server which handle requests from client.
      * client send data and the server operate to sort them in a linked list. */
 
-    printf("[COLLECTOR SERVER] PID: %d\n", getpid());
-
     int server_fd;
     int events_count;
     int epoll_fd;
