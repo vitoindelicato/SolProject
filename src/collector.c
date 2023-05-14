@@ -34,7 +34,7 @@ _node *node_builder(char *buffer){
     return new_node;
 
 }
-
+/*
 _node *client_handler(int client_fd, int *stop, _node *head) {
     char buffer[PATH_MAX] = {'\0'};
     readn(client_fd, buffer, PATH_MAX);
@@ -61,7 +61,7 @@ _node *client_handler(int client_fd, int *stop, _node *head) {
     close(client_fd);
     return new_node;
 }
-
+*/
 
 
 
@@ -160,32 +160,33 @@ void collector() {
                 }
             }
             else{
-                /*Questo ramo indica un evento su altro file descriptor
-                 * Quindi implica che uno dei client ha inviato qualcosa*/
+                /*
+                 * This branch means that an event occured on a file descriptor that isn't the server's one
+                 * It means that a client sent something
+                 */
+
+                memset(buffer, 0, sizeof(buffer)); // cleaning buffer before reading
                 n = read(events[i].data.fd, buffer, PATH_MAX);
 
                 if(n == 0 ){
-                    /*Significa che il client ha chiuso la connessione
-                     * Rimuovo il suo file descriptor dal set*/
+                    /* This means that client closed connection
+                     * I can remove its file descriptor from set */
                     if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &event) == -1){
                         perror("Errore nella rimozione del client_fd dall'epoll set");
                         exit(EXIT_FAILURE);
                     }
-                    memset(buffer, 0, sizeof(buffer));
                 }
                 else if(n > 0){
-                    /*Il client ha inviato qualcosa*/
+                    /* Client sent something */
 
                     if(strcmp(buffer, "PRINT") == 0) {
                         printf("\nPrinting after SIGUSR1 =============:\n");
                         print_list(head);
                         printf("====================================\n\n");
-                        memset(buffer, 0, sizeof(buffer));
                         continue;
                     }
                     if(strcmp(buffer, "DONE") == 0) {
-                        /*All threads returned, master worker sent last message, we're done, i can close the server*/
-                        memset(buffer, 0, sizeof(buffer));
+                        /* All threads returned, master worker sent last message, we're done, I can close the server */
 
                         if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &event) == -1){
                             perror("Errore nella rimozione del client_fd dall'epoll set");
@@ -197,7 +198,6 @@ void collector() {
                     else{
                         _node *new_node = node_builder(buffer);
                         insert_node(&head, new_node);
-                        memset(buffer, 0, sizeof(buffer));
                     }
                 }
                 else{
@@ -205,7 +205,6 @@ void collector() {
                     exit(EXIT_FAILURE);
                 }
             }
-            memset(buffer, 0, sizeof(buffer));
         }
     }
     print_list(head);
